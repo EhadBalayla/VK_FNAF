@@ -2,10 +2,12 @@
 #define WINDOW
 
 #include "vk_context.h"
+#include "vk_swapchain.h"
 
 typedef struct {
     void* m_GLFWwindow;
     vk_context m_Context;
+    vk_swapchain m_Swapchain;
 } Window;
 
 void Window_InitGLFW();
@@ -22,5 +24,8 @@ void Window_EndFrame(Window* pWindow);
 void Window_PollEvents();
 
 int Window_ShouldClose(Window* pWindow);
+
+typedef struct GLFWwindow GLFWwindow;
+void Window_SetResizeCallback(Window* pWindow, void (*GLFWframebuffersizefun)(void* GLFWwindow, int width, int height));
 
 #endif
