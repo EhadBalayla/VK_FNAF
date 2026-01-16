@@ -1,0 +1,7 @@
+*Makefile
+*CMakeLists.txt
+*CMakeCache.txt
+*CMakeFiles
+*cmake_install.cmake
+models
+Game/Compiled/VK_FNAF
