@@ -3,14 +3,17 @@
 Game* GGame = NULL;
 
 //function declarations
-void Window_Resize(void* GLFWwindow, int width, int height);
+void Window_Resize(GLFWwindow* GLFWwindow, int width, int height);
 
 
 
 void Game_Init(Game* pGame) {
+    pGame->Width = 1600;
+    pGame->Height = 900;
+
     //create the Window and initialize context and swapchain
     Window_InitGLFW();
-    Window_CreateWindow(&pGame->m_Window, 1280, 720, "VK_FNAF");
+    Window_CreateWindow(&pGame->m_Window, pGame->Width, pGame->Height, "VK_FNAF");
     Window_CreateContext(&pGame->m_Window);
 
     //set the window callbacks
@@ -24,11 +27,19 @@ void Game_Init(Game* pGame) {
     pGame->m_Renderer.PresentQueue = pGame->m_Window.m_Context.PresentQueue;
     pGame->m_Renderer.MaxFramesInFlight = MAX_FRAMES_IN_FLIGHT;
     Renderer_Init(&pGame->m_Renderer);
+
+
+    //load in the resources
+    //load in the shaders
+    Shader_Load(&pGame->firstShader, "Shaders/BaseShader_vert.spv", "Shaders/BaseShader_frag.spv");
 }
 void Game_Loop(Game* pGame) {
     while(!Window_ShouldClose(&pGame->m_Window)) {
         Window_PollEvents();
         Window_StartFrame(&pGame->m_Window);
+
+        vkCmdBindPipeline(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->firstShader.graphicsPipeline);
+        vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 3, 1, 0, 0);
 
         Window_EndFrame(&pGame->m_Window);
     }
@@ -45,6 +56,9 @@ void Game_Terminate(Game* pGame) {
 
 
 
-void Window_Resize(void* GLFWwindow, int width, int height) {
+void Window_Resize(GLFWwindow* GLFWwindow, int width, int height) {
+    GGame->Width = width;
+    GGame->Height = height;
+    
     VKSwapchain_Recreate(&GGame->m_Window.m_Swapchain);
 }

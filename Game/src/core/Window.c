@@ -130,6 +130,6 @@ int Window_ShouldClose(Window* pWindow) {
 }
 
 
-void Window_SetResizeCallback(Window* pWindow, void (*resizefunc)(void* GLFWwindow, int width, int height)) {
+void Window_SetResizeCallback(Window* pWindow, void (*resizefunc)(GLFWwindow* GLFWwindow, int width, int height)) {
     glfwSetFramebufferSizeCallback((GLFWwindow*)pWindow->m_GLFWwindow, resizefunc);
 }

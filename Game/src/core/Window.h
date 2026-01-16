@@ -26,6 +26,6 @@ void Window_PollEvents();
 int Window_ShouldClose(Window* pWindow);
 
 typedef struct GLFWwindow GLFWwindow;
-void Window_SetResizeCallback(Window* pWindow, void (*GLFWframebuffersizefun)(void* GLFWwindow, int width, int height));
+void Window_SetResizeCallback(Window* pWindow, void (*GLFWframebuffersizefun)(GLFWwindow* GLFWwindow, int width, int height));
 
 #endif
