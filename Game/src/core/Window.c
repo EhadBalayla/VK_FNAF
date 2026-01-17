@@ -57,7 +57,7 @@ void Window_StartFrame(Window* pWindow) {
     }
 
     uint32_t clearValuesCount = 1;
-    VkClearValue clearValues[] = {{0.0, 0.2, 1.0, 1.0}};
+    VkClearValue clearValues[] = {{0.0, 0.0, 0.0, 1.0}};
 
     VkRenderPassBeginInfo renderPassInfo = {0};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -103,7 +103,7 @@ void Window_EndFrame(Window* pWindow) {
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &GGame->m_Renderer.commandBuffers[currentFrame];
 	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = &GGame->m_Renderer.renderingFinishedSemaphores[currentFrame];
+	submitInfo.pSignalSemaphores = &GGame->m_Renderer.renderingFinishedSemaphores[imageIndex];
 
 	if (vkQueueSubmit(pWindow->m_Context.graphicsQueue, 1, &submitInfo, GGame->m_Renderer.inFlightFences[currentFrame]) != VK_SUCCESS) {
 		fprintf(stderr, "failed to submit draw command buffer");
@@ -112,7 +112,7 @@ void Window_EndFrame(Window* pWindow) {
 	VkPresentInfoKHR presentInfo = {0};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = &GGame->m_Renderer.renderingFinishedSemaphores[currentFrame];
+	presentInfo.pWaitSemaphores = &GGame->m_Renderer.renderingFinishedSemaphores[imageIndex];
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = &pWindow->m_Swapchain.swapchain;
 	presentInfo.pImageIndices = &imageIndex;

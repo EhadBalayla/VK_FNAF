@@ -4,6 +4,7 @@
 #include "Window.h"
 #include "Renderer.h"
 #include "Shader.h"
+#include "Texture.h"
 
 typedef struct {
     //the entire systems
@@ -13,6 +14,9 @@ typedef struct {
     //some configurational parameters
     int Width;
     int Height;
+
+    //texture resources
+    Texture officeTexture;
 
     //shader resources
     Shader firstShader;

@@ -1,5 +1,7 @@
 #include "Game.h"
 
+#include <cglm/cglm.h>
+
 Game* GGame = NULL;
 
 //function declarations
@@ -20,6 +22,9 @@ void Game_Init(Game* pGame) {
     Window_SetResizeCallback(&pGame->m_Window, Window_Resize);
 
     //give the renderer the necessary handles and initialize the renderer
+    pGame->m_Renderer.instance = pGame->m_Window.m_Context.instance;
+    pGame->m_Renderer.debugMessenger = pGame->m_Window.m_Context.debugMessenger;
+    pGame->m_Renderer.physicalDevice = pGame->m_Window.m_Context.physicalDevice;
     pGame->m_Renderer.device = pGame->m_Window.m_Context.device;
     pGame->m_Renderer.graphicsFamily = pGame->m_Window.m_Context.graphicsFamily;
     pGame->m_Renderer.presentFamily = pGame->m_Window.m_Context.presentFamily;
@@ -29,7 +34,11 @@ void Game_Init(Game* pGame) {
     Renderer_Init(&pGame->m_Renderer);
 
 
-    //load in the resources
+    //load in the textures
+    LoadTexture(&pGame->officeTexture, "Textures/debugTex.jpeg");
+
+    Renderer_CreateSets(&pGame->m_Renderer);
+
     //load in the shaders
     Shader_Load(&pGame->firstShader, "Shaders/BaseShader_vert.spv", "Shaders/BaseShader_frag.spv");
 }
@@ -38,14 +47,30 @@ void Game_Loop(Game* pGame) {
         Window_PollEvents();
         Window_StartFrame(&pGame->m_Window);
 
+        mat4 proj;
+        glm_ortho(-pGame->Width / 2.0f, pGame->Width / 2.0f, pGame->Height / 2.0f, -pGame->Height / 2.0f, -1.0, 1.0, proj);
+        proj[1][1] *= -1;
+        mat4 trans;
+        glm_mat4_identity(trans);
+        glm_scale(trans, (vec3){300.0f, 300.0f, 1.0f});
+
+        mat4 overall;
+        glm_mat4_mul(proj, trans, overall);
+
+        vkCmdBindDescriptorSets(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->firstShader.pipelineLayout, 0, 1, &pGame->m_Renderer.officeTextureSets[currentFrame], 0, NULL);
         vkCmdBindPipeline(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->firstShader.graphicsPipeline);
-        vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 3, 1, 0, 0);
+        vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->firstShader.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall);
+        vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
 
         Window_EndFrame(&pGame->m_Window);
     }
 }
 void Game_Terminate(Game* pGame) {
     Renderer_wait(&pGame->m_Renderer);
+
+    Shader_Delete(&pGame->firstShader);
+
+    DeleteTexture(&pGame->officeTexture);
 
     Renderer_Terminate(&pGame->m_Renderer);
 

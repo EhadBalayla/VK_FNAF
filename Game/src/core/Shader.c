@@ -166,12 +166,17 @@ void Shader_Load(Shader* pShader, const char* vertexFile, const char* fragmentFi
 
 
     //creating a temporary pipeline layout (later on i will hardcode the pipeline layout)
+    VkPushConstantRange range = {0};
+    range.offset = 0;
+    range.size = sizeof(float) * 16; //the size of a mat4 too, thing is i dont wanna include cglm in here
+    range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {0};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.pushConstantRangeCount = 0;
-    pipelineLayoutInfo.pPushConstantRanges = NULL;
-    pipelineLayoutInfo.setLayoutCount = 0;
-    pipelineLayoutInfo.pSetLayouts = NULL;
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
+    pipelineLayoutInfo.pPushConstantRanges = &range;
+    pipelineLayoutInfo.setLayoutCount = 1;
+    pipelineLayoutInfo.pSetLayouts = &GGame->m_Renderer.singleTexLayout;
 
     if(vkCreatePipelineLayout(GGame->m_Renderer.device, &pipelineLayoutInfo, NULL, &pShader->pipelineLayout) != VK_SUCCESS) {
         fprintf(stderr, "failed to create temporary pipeline layout");
