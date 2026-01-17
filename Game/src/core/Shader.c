@@ -29,7 +29,7 @@ char* ReadFile(const char* filename, size_t* returnedSize) {
 VkShaderModule createShaderModule(char* code, size_t codeSize) {
     VkShaderModuleCreateInfo moduleInfo = {0};
     moduleInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    moduleInfo.pCode = code;
+    moduleInfo.pCode = (uint32_t*)code;
     moduleInfo.codeSize = codeSize;
 
     VkShaderModule shaderModule;

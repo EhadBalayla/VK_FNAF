@@ -44,15 +44,19 @@ void VKSwapchain_Delete(vk_swapchain* pSwapchain) {
     
 	for(int i = 0; i < pSwapchain->MaxFramesInFlight; i++) {
 		vkDestroySemaphore(context->device, pSwapchain->imageAvailableSemaphores[i], NULL);
+		vkDestroyFence(context->device, pSwapchain->inFlightFences[i], NULL);
 	}
 	free(pSwapchain->imageAvailableSemaphores);
+	free(pSwapchain->inFlightFences);
 
     for(int i = 0; i < pSwapchain->swapchainImagesCount; i++) {
 		vkDestroyFramebuffer(context->device, pSwapchain->swapchainFramebuffers[i], NULL);
         vkDestroyImageView(context->device, pSwapchain->swapchainImageViews[i], NULL);
+		vkDestroySemaphore(context->device, pSwapchain->renderingFinishedSemaphores[i], NULL);
     }
 	free(pSwapchain->swapchainFramebuffers);
     free(pSwapchain->swapchainImageViews);
+	free(pSwapchain->renderingFinishedSemaphores);
 
 	vkDestroyRenderPass(context->device, pSwapchain->swapchainRenderPass, NULL);
 
@@ -246,13 +250,26 @@ void CreateSwapSyncObjects(vk_swapchain* pSwapchain) {
 	vk_context* context = (vk_context*)pSwapchain->pContext;
 
 	pSwapchain->imageAvailableSemaphores = (VkSemaphore*)malloc(sizeof(VkSemaphore) * pSwapchain->MaxFramesInFlight);
+	pSwapchain->inFlightFences = (VkFence*)malloc(sizeof(VkFence) * pSwapchain->MaxFramesInFlight);
+	pSwapchain->renderingFinishedSemaphores = (VkSemaphore*)malloc(sizeof(VkSemaphore) * pSwapchain->swapchainImagesCount);
 
 	VkSemaphoreCreateInfo semaphoreInfo = {0};
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
+	VkFenceCreateInfo fenceInfo = {0};
+	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
 	for (int i = 0; i < pSwapchain->MaxFramesInFlight; i++) {
-		if (vkCreateSemaphore(context->device, &semaphoreInfo, NULL, &pSwapchain->imageAvailableSemaphores[i]) != VK_SUCCESS) {
-			fprintf(stderr, "failed to create synchronization objects of the swapchain for a frame");
+		if (vkCreateSemaphore(context->device, &semaphoreInfo, NULL, &pSwapchain->imageAvailableSemaphores[i]) != VK_SUCCESS |
+			vkCreateFence(context->device, &fenceInfo, NULL, &pSwapchain->inFlightFences[i]) != VK_SUCCESS) {
+			fprintf(stderr, "failed to create first synchronization objects of the swapchain for a frame");
+			exit(EXIT_FAILURE);
+		}
+	}
+	for (int i = 0; i < pSwapchain->swapchainImagesCount; i++) {
+		if (vkCreateSemaphore(context->device, &semaphoreInfo, NULL, &pSwapchain->renderingFinishedSemaphores[i]) != VK_SUCCESS) {
+			fprintf(stderr, "failed to create first synchronization objects of the swapchain for a frame");
 			exit(EXIT_FAILURE);
 		}
 	}

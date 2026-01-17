@@ -14,7 +14,9 @@ typedef struct {
     VkImage* swapchainImages; uint32_t swapchainImagesCount;
     VkImageView* swapchainImageViews; //uses the same amount as the swapchainImages
     VkFramebuffer* swapchainFramebuffers; //same as the image views
-    VkSemaphore* imageAvailableSemaphores; //again, the same thing
+    VkSemaphore* renderingFinishedSemaphores; //again, the same thing
+    VkSemaphore* imageAvailableSemaphores; 
+    VkFence* inFlightFences;
     VkRenderPass swapchainRenderPass;
 
     VkFormat swapchainImageFormat;

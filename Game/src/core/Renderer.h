@@ -22,8 +22,6 @@ typedef struct {
     //for the arrays, the sizes are the max frames in flight
     VkCommandPool commandPool;
     VkCommandBuffer* commandBuffers;
-    VkSemaphore* renderingFinishedSemaphores;
-    VkFence* inFlightFences;
     VkDescriptorPool descriptorPool;
     VmaAllocator allocator;
     VkSampler sampler;

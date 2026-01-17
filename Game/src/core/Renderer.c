@@ -10,7 +10,6 @@ int currentFrame = 0;
 //creation functions declarations
 void CreateCommandPool(Renderer* pRenderer);
 void CreateCommandBuffers(Renderer* pRenderer);
-void CreateSyncObjects(Renderer* pRenderer);
 void CreateDescriptorPool(Renderer* pRenderer);
 void CreateAllocator(Renderer* pRenderer);
 void CreateSampler(Renderer* pRenderer);
@@ -18,19 +17,12 @@ void CreateSampler(Renderer* pRenderer);
 void Renderer_Init(Renderer* pRenderer) {
     CreateCommandPool(pRenderer);
     CreateCommandBuffers(pRenderer);
-    CreateSyncObjects(pRenderer);
     CreateDescriptorPool(pRenderer);
     CreateAllocator(pRenderer);
     CreateSampler(pRenderer);
 }
 void Renderer_Terminate(Renderer* pRenderer) {
     //destroy stuff that are arrays with the max frames in flight stuff
-    for(int i = 0; i < pRenderer->MaxFramesInFlight; i++) {
-        vkDestroyFence(pRenderer->device, pRenderer->inFlightFences[i], NULL);
-    }
-    for(int i = 0; i < GGame->m_Window.m_Swapchain.swapchainImagesCount; i++) {
-        vkDestroySemaphore(pRenderer->device, pRenderer->renderingFinishedSemaphores[i], NULL);
-    }
     free(pRenderer->officeTextureSets);
 
     vkDestroyDescriptorSetLayout(pRenderer->device, pRenderer->singleTexLayout, NULL);
@@ -43,8 +35,6 @@ void Renderer_Terminate(Renderer* pRenderer) {
 
     vkDestroyDescriptorPool(pRenderer->device, pRenderer->descriptorPool, NULL);
 
-    free(pRenderer->inFlightFences);
-    free(pRenderer->renderingFinishedSemaphores);
     free(pRenderer->commandBuffers);
 
     vkDestroyCommandPool(pRenderer->device, pRenderer->commandPool, NULL);
@@ -127,32 +117,6 @@ void CreateCommandBuffers(Renderer* pRenderer) {
     if(vkAllocateCommandBuffers(pRenderer->device, &allocInfo, pRenderer->commandBuffers) != VK_SUCCESS) {
         fprintf(stderr, "failed to allocate frames command buffers");
         exit(EXIT_FAILURE);
-    }
-}
-void CreateSyncObjects(Renderer* pRenderer) {
-    pRenderer->renderingFinishedSemaphores = (VkSemaphore*)malloc(sizeof(VkSemaphore) * GGame->m_Window.m_Swapchain.swapchainImagesCount);
-    pRenderer->inFlightFences = (VkFence*)malloc(sizeof(VkFence) * pRenderer->MaxFramesInFlight);
-
-    VkSemaphoreCreateInfo semaphoreInfo = {0};
-	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-	VkFenceCreateInfo fenceInfo = {0};
-	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-    for(int i = 0; i < pRenderer->MaxFramesInFlight; i++) {
-        if (vkCreateFence(pRenderer->device, &fenceInfo, NULL, &pRenderer->inFlightFences[i]) != VK_SUCCESS) {
-
-			fprintf(stderr, "failed to create synchronization objects for a frame!");
-            exit(EXIT_FAILURE);
-		}
-    }
-
-    for(int i = 0; i < GGame->m_Window.m_Swapchain.swapchainImagesCount; i++) {
-        if (vkCreateSemaphore(pRenderer->device, &semaphoreInfo, NULL, &pRenderer->renderingFinishedSemaphores[i]) != VK_SUCCESS) {
-            fprintf(stderr, "failed to create rendering finished semaphores");
-            exit(EXIT_FAILURE);
-        }
     }
 }
 void CreateDescriptorPool(Renderer* pRenderer) {

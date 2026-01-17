@@ -41,8 +41,8 @@ void Window_DestroyContext(Window* pWindow) {
 }
 
 void Window_StartFrame(Window* pWindow) {
-    vkWaitForFences(pWindow->m_Context.device, 1, &GGame->m_Renderer.inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
-    vkResetFences(pWindow->m_Context.device, 1, &GGame->m_Renderer.inFlightFences[currentFrame]);
+    vkWaitForFences(pWindow->m_Context.device, 1, &pWindow->m_Swapchain.inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+    vkResetFences(pWindow->m_Context.device, 1, &pWindow->m_Swapchain.inFlightFences[currentFrame]);
 
     vkAcquireNextImageKHR(pWindow->m_Context.device, pWindow->m_Swapchain.swapchain, UINT64_MAX, pWindow->m_Swapchain.imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
@@ -103,16 +103,16 @@ void Window_EndFrame(Window* pWindow) {
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &GGame->m_Renderer.commandBuffers[currentFrame];
 	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = &GGame->m_Renderer.renderingFinishedSemaphores[imageIndex];
+	submitInfo.pSignalSemaphores = &pWindow->m_Swapchain.renderingFinishedSemaphores[imageIndex];
 
-	if (vkQueueSubmit(pWindow->m_Context.graphicsQueue, 1, &submitInfo, GGame->m_Renderer.inFlightFences[currentFrame]) != VK_SUCCESS) {
+	if (vkQueueSubmit(pWindow->m_Context.graphicsQueue, 1, &submitInfo, pWindow->m_Swapchain.inFlightFences[currentFrame]) != VK_SUCCESS) {
 		fprintf(stderr, "failed to submit draw command buffer");
         exit(EXIT_FAILURE);
 	}
 	VkPresentInfoKHR presentInfo = {0};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = &GGame->m_Renderer.renderingFinishedSemaphores[imageIndex];
+	presentInfo.pWaitSemaphores = &pWindow->m_Swapchain.renderingFinishedSemaphores[imageIndex];
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = &pWindow->m_Swapchain.swapchain;
 	presentInfo.pImageIndices = &imageIndex;
