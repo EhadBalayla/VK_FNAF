@@ -22,11 +22,7 @@ vec2 uvs[6] = vec2[](
     vec2(0.0, 0.0)
 );
 
-layout (push_constant) uniform matrices {
-    mat4 ProjModel;
-} ProjModel_Mat;
-
 void main() {
     uv = uvs[gl_VertexIndex];
-    gl_Position = ProjModel_Mat.ProjModel * vec4(positions[gl_VertexIndex], 0.0, 1.0);
+    gl_Position = vec4(positions[gl_VertexIndex], 0.0, 1.0);
 }

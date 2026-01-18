@@ -1,17 +1,43 @@
 #include "Game.h"
 
 #include <cglm/cglm.h>
+#include <GLFW/glfw3.h>
+
+//small helper function
+float fclamp(float value, float min, float max) {
+    if(value < min) value = min;
+    else if (value > max) value = max;
+
+    return value;
+}
+//temporary parameters
+double LastTime = 0.0;
+
+double lastMouseX = 0.0;
+double lastMouseY = 0.0;
+
+
 
 Game* GGame = NULL;
 
 //function declarations
 void Window_Resize(GLFWwindow* GLFWwindow, int width, int height);
+void Window_KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
+void Window_MouseCallback(GLFWwindow *window, double xpos, double ypos);
 
 
 
 void Game_Init(Game* pGame) {
+    //initializing parameters
     pGame->Width = 1600;
     pGame->Height = 900;
+
+    pGame->DeltaTime = 0.0;
+
+    pGame->horizontalScroll = 0.0f;
+
+    pGame->MouseX = 0.0;
+    pGame->MouseY = 0.0;
 
     //create the Window and initialize context and swapchain
     Window_InitGLFW();
@@ -20,6 +46,8 @@ void Game_Init(Game* pGame) {
 
     //set the window callbacks
     Window_SetResizeCallback(&pGame->m_Window, Window_Resize);
+    Window_SetKeyCallback(&pGame->m_Window, Window_KeyCallback);
+    Window_SetMouseCallback(&pGame->m_Window, Window_MouseCallback);
 
     //give the renderer the necessary handles and initialize the renderer
     pGame->m_Renderer.instance = pGame->m_Window.m_Context.instance;
@@ -35,32 +63,56 @@ void Game_Init(Game* pGame) {
 
 
     //load in the textures
-    LoadTexture(&pGame->officeTexture, "Textures/debugTex.jpeg");
+    LoadTexture(&pGame->officeTexture, "Textures/Debug_Office.png");
 
     Renderer_CreateSets(&pGame->m_Renderer);
 
     //load in the shaders
-    Shader_Load(&pGame->firstShader, "Shaders/BaseShader_vert.spv", "Shaders/BaseShader_frag.spv");
+    Shader_Load(&pGame->FullscreenShader, "Shaders/FullscreenShader_vert.spv", "Shaders/FullscreenShader_frag.spv", 1);
+    Shader_Load(&pGame->firstShader, "Shaders/BaseShader_vert.spv", "Shaders/BaseShader_frag.spv", 0);
 }
 void Game_Loop(Game* pGame) {
     while(!Window_ShouldClose(&pGame->m_Window)) {
         Window_PollEvents();
         Window_StartFrame(&pGame->m_Window);
 
+        double currentTime = glfwGetTime();
+        pGame->DeltaTime = currentTime - LastTime;
+        LastTime = currentTime;
+
+        double midRelX = GGame->MouseX - GGame->Width / 2.0;
+        double maxDisFromMid = GGame->Width / 2.0;
+        if(midRelX < -(maxDisFromMid / 2.0)) {
+            float scale = -(midRelX + maxDisFromMid / 2.0);
+            GGame->horizontalScroll += 10.0f * scale * GGame->DeltaTime;
+        }
+        else if(midRelX > maxDisFromMid / 2.0) {
+            float scale = midRelX - maxDisFromMid / 2.0;
+            GGame->horizontalScroll -= 10.0f * scale * GGame->DeltaTime;
+        }
+        GGame->horizontalScroll = fclamp(GGame->horizontalScroll, -798.514893, 798.514893);
+
         mat4 proj;
         glm_ortho(-pGame->Width / 2.0f, pGame->Width / 2.0f, pGame->Height / 2.0f, -pGame->Height / 2.0f, -1.0, 1.0, proj);
         proj[1][1] *= -1;
         mat4 trans;
         glm_mat4_identity(trans);
-        glm_scale(trans, (vec3){300.0f, 300.0f, 1.0f});
+        glm_translate(trans, (vec3){pGame->horizontalScroll, 0.0f, 0.0f});
+        glm_scale(trans, (vec3){pGame->Width, pGame->Height, 1.0f});
 
         mat4 overall;
         glm_mat4_mul(proj, trans, overall);
 
-        vkCmdBindDescriptorSets(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->firstShader.pipelineLayout, 0, 1, &pGame->m_Renderer.officeTextureSets[currentFrame], 0, NULL);
+        Renderer_StartDraw(&pGame->m_Renderer);
+
+        vkCmdBindDescriptorSets(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->m_Renderer.pipelineLayout, 0, 1, &pGame->m_Renderer.officeTextureSets[currentFrame], 0, NULL);
         vkCmdBindPipeline(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->firstShader.graphicsPipeline);
-        vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->firstShader.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall);
+        vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall);
         vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
+
+        Renderer_EndDraw(&pGame->m_Renderer);
+
+        Window_DrawScreen(&pGame->m_Window);
 
         Window_EndFrame(&pGame->m_Window);
     }
@@ -69,6 +121,7 @@ void Game_Terminate(Game* pGame) {
     Renderer_wait(&pGame->m_Renderer);
 
     Shader_Delete(&pGame->firstShader);
+    Shader_Delete(&pGame->FullscreenShader);
 
     DeleteTexture(&pGame->officeTexture);
 
@@ -84,6 +137,16 @@ void Game_Terminate(Game* pGame) {
 void Window_Resize(GLFWwindow* GLFWwindow, int width, int height) {
     GGame->Width = width;
     GGame->Height = height;
-    
+
+    Renderer_wait(&GGame->m_Renderer);
+
     VKSwapchain_Recreate(&GGame->m_Window.m_Swapchain);
+    Renderer_RecreateOffscreenFramebuffer(&GGame->m_Renderer);
+}
+void Window_KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+
+}
+void Window_MouseCallback(GLFWwindow *window, double xpos, double ypos) {
+    GGame->MouseX = xpos;
+    GGame->MouseY = ypos;
 }

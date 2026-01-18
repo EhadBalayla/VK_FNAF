@@ -23,9 +23,13 @@ void Window_StartFrame(Window* pWindow);
 void Window_EndFrame(Window* pWindow);
 void Window_PollEvents();
 
+void Window_DrawScreen(Window* pWindow);
+
 int Window_ShouldClose(Window* pWindow);
 
 typedef struct GLFWwindow GLFWwindow;
 void Window_SetResizeCallback(Window* pWindow, void (*GLFWframebuffersizefun)(GLFWwindow* GLFWwindow, int width, int height));
+void Window_SetKeyCallback(Window* pWindow, void (*GLFWkeyfun)(GLFWwindow *window, int key, int scancode, int action, int mods));
+void Window_SetMouseCallback(Window* pWindow, void (*GLFWcursorposfun)(GLFWwindow *window, double xpos, double ypos));
 
 #endif

@@ -25,11 +25,17 @@ typedef struct {
     VkDescriptorPool descriptorPool;
     VmaAllocator allocator;
     VkSampler sampler;
+    VkRenderPass offscreenPass;
+    VkImage* colorBuffer;
+    VkImageView* colorBufferView;
+    VmaAllocation* colorBufferAllocation;
+    VkFramebuffer* offscreenFramebuffers;
 
     //descriptors, also arrays too use the max frames in flight
     VkDescriptorSetLayout singleTexLayout; //a set layout for a single texture 
+    VkDescriptorSetLayout pipelineLayout;
+    VkDescriptorSet* fullscreenSets; //will be plopping the offscreen buffer into this for using in the swapchain
     VkDescriptorSet* officeTextureSets; //a single descriptor set hardcoded to be used for the office
-    
 } Renderer;
 
 void Renderer_Init(Renderer* pRenderer);
@@ -38,6 +44,12 @@ void Renderer_Terminate(Renderer* pRenderer);
 //we need separate functions since we wanna make those descriptor sets after we load in all the textures
 void Renderer_CreateSets(Renderer* pRenderer);
 
+//for the offscreen drawing
+void Renderer_StartDraw(Renderer* pRenderer);
+void Renderer_EndDraw(Renderer* pRenderer);
+
 void Renderer_wait(Renderer* pRenderer);
+
+void Renderer_RecreateOffscreenFramebuffer(Renderer* pRenderer);
 
 #endif

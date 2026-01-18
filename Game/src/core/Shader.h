@@ -5,10 +5,9 @@
 
 typedef struct {
     VkPipeline graphicsPipeline;
-    VkPipelineLayout pipelineLayout;
 } Shader;
 
-void Shader_Load(Shader* pShader, const char* vertexFile, const char* fragmentFile);
+void Shader_Load(Shader* pShader, const char* vertexFile, const char* fragmentFile, int IsScreen);
 void Shader_Delete(Shader* pShader);
 
 #endif

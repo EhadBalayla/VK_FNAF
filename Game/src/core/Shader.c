@@ -42,7 +42,7 @@ VkShaderModule createShaderModule(char* code, size_t codeSize) {
 }
 
 
-void Shader_Load(Shader* pShader, const char* vertexFile, const char* fragmentFile) {
+void Shader_Load(Shader* pShader, const char* vertexFile, const char* fragmentFile, int IsScreen) {
     size_t vertexCodeSize, fragmentCodeSize;
     char* vertexCode = ReadFile(vertexFile, &vertexCodeSize);
     char* fragmentCode = ReadFile(fragmentFile, &fragmentCodeSize);
@@ -165,24 +165,7 @@ void Shader_Load(Shader* pShader, const char* vertexFile, const char* fragmentFi
 
 
 
-    //creating a temporary pipeline layout (later on i will hardcode the pipeline layout)
-    VkPushConstantRange range = {0};
-    range.offset = 0;
-    range.size = sizeof(float) * 16; //the size of a mat4 too, thing is i dont wanna include cglm in here
-    range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {0};
-    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.pushConstantRangeCount = 1;
-    pipelineLayoutInfo.pPushConstantRanges = &range;
-    pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &GGame->m_Renderer.singleTexLayout;
-
-    if(vkCreatePipelineLayout(GGame->m_Renderer.device, &pipelineLayoutInfo, NULL, &pShader->pipelineLayout) != VK_SUCCESS) {
-        fprintf(stderr, "failed to create temporary pipeline layout");
-        exit(EXIT_FAILURE);
-    }
-
+    //finally the creation of the pipeline state
     VkGraphicsPipelineCreateInfo pipelineInfo = {0};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.pStages = shaderStages;
@@ -195,8 +178,8 @@ void Shader_Load(Shader* pShader, const char* vertexFile, const char* fragmentFi
 	pipelineInfo.pViewportState = &viewportState;
 	pipelineInfo.pColorBlendState = &colorBlendState;
 	pipelineInfo.pDepthStencilState = &depthStencilState;
-    pipelineInfo.layout = pShader->pipelineLayout;
-	pipelineInfo.renderPass = GGame->m_Window.m_Swapchain.swapchainRenderPass;
+    pipelineInfo.layout = GGame->m_Renderer.pipelineLayout;
+	pipelineInfo.renderPass = IsScreen == 0 ? GGame->m_Renderer.offscreenPass : GGame->m_Window.m_Swapchain.swapchainRenderPass;
 	pipelineInfo.subpass = 0;
 
     if(vkCreateGraphicsPipelines(GGame->m_Renderer.device, VK_NULL_HANDLE, 1, &pipelineInfo, NULL, &pShader->graphicsPipeline) != VK_SUCCESS) {
@@ -209,5 +192,4 @@ void Shader_Load(Shader* pShader, const char* vertexFile, const char* fragmentFi
 }
 void Shader_Delete(Shader* pShader) {
     vkDestroyPipeline(GGame->m_Renderer.device, pShader->graphicsPipeline, NULL);
-    vkDestroyPipelineLayout(GGame->m_Renderer.device, pShader->pipelineLayout, NULL);
 }

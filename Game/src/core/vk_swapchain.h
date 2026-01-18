@@ -21,8 +21,6 @@ typedef struct {
 
     VkFormat swapchainImageFormat;
     VkExtent2D swapchainImageExtent;
-
-
 } vk_swapchain;
 
 void VKSwapchain_Create(vk_swapchain* pSwapchain);

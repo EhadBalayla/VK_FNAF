@@ -67,8 +67,6 @@ void VKSwapchain_Delete(vk_swapchain* pSwapchain) {
 void VKSwapchain_Recreate(vk_swapchain* pSwapchain) {
 	vk_context* context = (vk_context*)pSwapchain->pContext;
 
-	vkDeviceWaitIdle(context->device);
-
 	//destroy the necessary stuff except the renderpass and sync objects
     for(int i = 0; i < pSwapchain->swapchainImagesCount; i++) {
 		vkDestroyFramebuffer(context->device, pSwapchain->swapchainFramebuffers[i], NULL);
@@ -76,7 +74,6 @@ void VKSwapchain_Recreate(vk_swapchain* pSwapchain) {
     }
 	free(pSwapchain->swapchainFramebuffers);
     free(pSwapchain->swapchainImageViews);
-
     free(pSwapchain->swapchainImages);
     vkDestroySwapchainKHR(context->device, pSwapchain->swapchain, NULL);
 

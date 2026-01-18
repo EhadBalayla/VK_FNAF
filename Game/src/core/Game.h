@@ -19,7 +19,18 @@ typedef struct {
     Texture officeTexture;
 
     //shader resources
+    Shader FullscreenShader;
     Shader firstShader;
+
+
+
+    //real time parameters to be used
+    double DeltaTime;
+
+    float horizontalScroll;
+
+    double MouseX;
+    double MouseY;
 } Game;
 
 extern Game* GGame; //a global pointer for the game instance
