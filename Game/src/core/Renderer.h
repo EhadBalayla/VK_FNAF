@@ -6,6 +6,11 @@
 
 extern int currentFrame;
 
+#define MAX_RENDERS 2
+
+#define OFFICE 0
+#define OFFICE_FAN 1
+
 typedef struct {
     //Vulkan setup handles (already created externally, will just be passing references)
     VkInstance instance;
@@ -33,9 +38,9 @@ typedef struct {
 
     //descriptors, also arrays too use the max frames in flight
     VkDescriptorSetLayout singleTexLayout; //a set layout for a single texture 
-    VkDescriptorSetLayout pipelineLayout;
+    VkPipelineLayout pipelineLayout;
     VkDescriptorSet* fullscreenSets; //will be plopping the offscreen buffer into this for using in the swapchain
-    VkDescriptorSet* officeTextureSets; //a single descriptor set hardcoded to be used for the office
+    VkDescriptorSet* textureSets[MAX_RENDERS];
 } Renderer;
 
 void Renderer_Init(Renderer* pRenderer);

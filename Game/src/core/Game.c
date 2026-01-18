@@ -16,6 +16,13 @@ double LastTime = 0.0;
 double lastMouseX = 0.0;
 double lastMouseY = 0.0;
 
+float fanSequence = 0.0f;
+
+char* textureLocations[] = {
+    "Textures/Debug_Office.png",
+    "Textures/Debug_Fan_Reborn.png"
+};
+
 
 
 Game* GGame = NULL;
@@ -63,13 +70,16 @@ void Game_Init(Game* pGame) {
 
 
     //load in the textures
-    LoadTexture(&pGame->officeTexture, "Textures/Debug_Office.png");
+    for(int i = 0; i < MAX_RENDERS; i++) {
+        LoadTexture(&pGame->allTextures[i], textureLocations[i]);
+    }
 
     Renderer_CreateSets(&pGame->m_Renderer);
 
     //load in the shaders
     Shader_Load(&pGame->FullscreenShader, "Shaders/FullscreenShader_vert.spv", "Shaders/FullscreenShader_frag.spv", 1);
     Shader_Load(&pGame->firstShader, "Shaders/BaseShader_vert.spv", "Shaders/BaseShader_frag.spv", 0);
+    Shader_Load(&pGame->atlasShader, "Shaders/AtlasShader_vert.spv", "Shaders/AtlasShader_frag.spv", 0);
 }
 void Game_Loop(Game* pGame) {
     while(!Window_ShouldClose(&pGame->m_Window)) {
@@ -105,9 +115,29 @@ void Game_Loop(Game* pGame) {
 
         Renderer_StartDraw(&pGame->m_Renderer);
 
-        vkCmdBindDescriptorSets(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->m_Renderer.pipelineLayout, 0, 1, &pGame->m_Renderer.officeTextureSets[currentFrame], 0, NULL);
+        //render office
+        vkCmdBindDescriptorSets(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->m_Renderer.pipelineLayout, 0, 1, &pGame->m_Renderer.textureSets[OFFICE][currentFrame], 0, NULL);
         vkCmdBindPipeline(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->firstShader.graphicsPipeline);
         vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall);
+        vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
+
+        //render office fan
+        fanSequence += pGame->DeltaTime * 50.0f;
+
+        int fanFrames = 24;
+        int fanIdx = (int)fanSequence % 24;
+        mat4 trans2;
+        glm_mat4_identity(trans2);
+        glm_translate(trans2, (vec3){-340.0f + pGame->horizontalScroll, 232.0f, 0.0f});
+        glm_scale(trans2, (vec3){132.0f, 160.0f, 1.0f});
+
+        mat4 overall2;
+        glm_mat4_mul(proj, trans2, overall2);
+        vkCmdBindDescriptorSets(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->m_Renderer.pipelineLayout, 0, 1, &pGame->m_Renderer.textureSets[OFFICE_FAN][currentFrame], 0, NULL);
+        vkCmdBindPipeline(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->atlasShader.graphicsPipeline);
+        vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall2);
+        vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(mat4), sizeof(int), &fanIdx);
+        vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(mat4) + sizeof(int), sizeof(int), &fanFrames);
         vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
 
         Renderer_EndDraw(&pGame->m_Renderer);
@@ -122,8 +152,11 @@ void Game_Terminate(Game* pGame) {
 
     Shader_Delete(&pGame->firstShader);
     Shader_Delete(&pGame->FullscreenShader);
+    Shader_Delete(&pGame->atlasShader);
 
-    DeleteTexture(&pGame->officeTexture);
+    for(int i = 0; i < MAX_RENDERS; i++) {
+        DeleteTexture(&pGame->allTextures[i]);
+    }
 
     Renderer_Terminate(&pGame->m_Renderer);
 

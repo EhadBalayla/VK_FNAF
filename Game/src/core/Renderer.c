@@ -43,7 +43,9 @@ void Renderer_Terminate(Renderer* pRenderer) {
 
 
     free(pRenderer->fullscreenSets);
-    free(pRenderer->officeTextureSets);
+    for(int i = 0; i < MAX_RENDERS; i++) {
+        free(pRenderer->textureSets[i]);
+    }
 
     vkDestroyPipelineLayout(pRenderer->device, pRenderer->pipelineLayout, NULL);
     vkDestroyDescriptorSetLayout(pRenderer->device, pRenderer->singleTexLayout, NULL);
@@ -81,7 +83,7 @@ void Renderer_CreateSets(Renderer* pRenderer) {
 
     VkPushConstantRange range = {0};
     range.offset = 0;
-    range.size = sizeof(float) * 16;
+    range.size = sizeof(float) * 16 + sizeof(int) * 2;
     range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {0};
@@ -103,27 +105,29 @@ void Renderer_CreateSets(Renderer* pRenderer) {
     allocInfo.descriptorSetCount = pRenderer->MaxFramesInFlight;
     allocInfo.pSetLayouts = setLayouts;
 
-    pRenderer->officeTextureSets = (VkDescriptorSet*)malloc(sizeof(VkDescriptorSet) * pRenderer->MaxFramesInFlight);
-    if(vkAllocateDescriptorSets(pRenderer->device, &allocInfo, pRenderer->officeTextureSets) != VK_SUCCESS) {
-        fprintf(stderr, "failed to allocate all single texture descriptor sets");
-        exit(EXIT_FAILURE);
-    }
-    for(int i = 0; i < pRenderer->MaxFramesInFlight; i++) {
-        VkDescriptorImageInfo imgInfo = {0};
-        imgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imgInfo.imageView = GGame->officeTexture.imageView;
-        imgInfo.sampler = pRenderer->sampler;
+    for(int i = 0; i < MAX_RENDERS; i++) {
+        pRenderer->textureSets[i] = (VkDescriptorSet*)malloc(sizeof(VkDescriptorSet) * pRenderer->MaxFramesInFlight);
+        if(vkAllocateDescriptorSets(pRenderer->device, &allocInfo, pRenderer->textureSets[i]) != VK_SUCCESS) {
+            fprintf(stderr, "failed to allocate all single texture descriptor sets");
+            exit(EXIT_FAILURE);
+        }
+        for(int j = 0; j < pRenderer->MaxFramesInFlight; j++) {
+            VkDescriptorImageInfo imgInfo = {0};
+            imgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            imgInfo.imageView = GGame->allTextures[i].imageView;
+            imgInfo.sampler = pRenderer->sampler;
 
-        VkWriteDescriptorSet setWrite = {0};
-        setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        setWrite.descriptorCount = 1;
-        setWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        setWrite.dstBinding = 0;
-        setWrite.pImageInfo = &imgInfo;
-        setWrite.dstArrayElement = 0;
-        setWrite.dstSet = pRenderer->officeTextureSets[i];
+            VkWriteDescriptorSet setWrite = {0};
+            setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            setWrite.descriptorCount = 1;
+            setWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            setWrite.dstBinding = 0;
+            setWrite.pImageInfo = &imgInfo;
+            setWrite.dstArrayElement = 0;
+            setWrite.dstSet = pRenderer->textureSets[i][j];
 
-        vkUpdateDescriptorSets(pRenderer->device, 1, &setWrite, 0, NULL);
+            vkUpdateDescriptorSets(pRenderer->device, 1, &setWrite, 0, NULL);
+        }
     }
 
 
@@ -217,7 +221,7 @@ void CreateCommandBuffers(Renderer* pRenderer) {
 void CreateDescriptorPool(Renderer* pRenderer) {
     //the used for the sampler2D descriptors
     VkDescriptorPoolSize poolSize1 = {0};
-    poolSize1.descriptorCount = 6; //on descriptor for MAX_FRAMES_IN_FLIGHT * descriptors per pool size
+    poolSize1.descriptorCount = 3 * MAX_RENDERS + 3; //on descriptor for MAX_FRAMES_IN_FLIGHT * descriptors per pool size
     poolSize1.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
     uint32_t poolSizesCount = 1;
@@ -225,7 +229,7 @@ void CreateDescriptorPool(Renderer* pRenderer) {
 
     VkDescriptorPoolCreateInfo poolInfo = {0};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.maxSets = 6;
+    poolInfo.maxSets = 3 * MAX_RENDERS + 3;
     poolInfo.pPoolSizes = poolSizes;
     poolInfo.poolSizeCount = poolSizesCount;
 
@@ -250,8 +254,8 @@ void CreateAllocator(Renderer* pRenderer) {
 void CreateSampler(Renderer* pRenderer) {
     VkSamplerCreateInfo samplerInfo = {0};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerInfo.magFilter = VK_FILTER_LINEAR;
-    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    samplerInfo.magFilter = VK_FILTER_NEAREST;
+    samplerInfo.minFilter = VK_FILTER_NEAREST;
     samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;

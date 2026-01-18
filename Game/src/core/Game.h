@@ -16,11 +16,12 @@ typedef struct {
     int Height;
 
     //texture resources
-    Texture officeTexture;
+    Texture allTextures[MAX_RENDERS];
 
     //shader resources
     Shader FullscreenShader;
     Shader firstShader;
+    Shader atlasShader;
 
 
 
