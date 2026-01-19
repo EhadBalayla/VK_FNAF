@@ -5,6 +5,7 @@
 #include "Renderer.h"
 #include "Shader.h"
 #include "Texture.h"
+#include "FontLoader.h"
 
 #include "../InGameUI/Screens/OfficeHUDScreen.h"
 
@@ -12,12 +13,14 @@ typedef struct {
     //the entire systems
     Window m_Window;
     Renderer m_Renderer;
+    FontLoader m_Font;
 
     //some configurational parameters
     int Width;
     int Height;
 
     //texture resources
+    Texture fontTexture;
     Texture allTextures[MAX_RENDERS];
 
     //shader resources
@@ -25,6 +28,7 @@ typedef struct {
     Shader firstShader;
     Shader atlasShader;
     Shader UIShader; //same as the firstShader, but for rendering to the swapchain, for in game UI
+    Shader TextShader; //a unique shader for text, but rendering entirely to the swapchain
 
     //in game UI screens
     OfficeHUDScreen officeHUD;

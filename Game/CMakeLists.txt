@@ -1,12 +1,16 @@
 #finding the packages
 find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
+find_package(Freetype REQUIRED)
 
 #making sure to get the include directories in the Vulkan SDK
 if(NOT Vulkan_INCLUDE_DIRS)
     set(Vulkan_INCLUDE_DIRS "$ENV{VULKAN_SDK}/Include")
 endif()
 message(STATUS "Vulkan include: ${Vulkan_INCLUDE_DIRS}")
+
+get_target_property(Freetype_INCLUDE_DIRS Freetype::Freetype INTERFACE_INCLUDE_DIRECTORIES)
+message(STATUS "Freetype include: ${Freetype_INCLUDE_DIRS}")
 
 file(GLOB_RECURSE SRC_FILES
     src/*.c
@@ -23,6 +27,7 @@ target_include_directories(Game PRIVATE
 target_link_libraries(Game PRIVATE m
     Vulkan::Vulkan
     glfw
+    Freetype::Freetype
 )
 
 set_target_properties(Game PROPERTIES

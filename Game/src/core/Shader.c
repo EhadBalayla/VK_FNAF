@@ -42,7 +42,7 @@ VkShaderModule createShaderModule(char* code, size_t codeSize) {
 }
 
 
-void Shader_Load(Shader* pShader, const char* vertexFile, const char* fragmentFile, int IsScreen) {
+void Shader_Load(Shader* pShader, const char* vertexFile, const char* fragmentFile, int IsScreen, int EnableAlpha) {
     size_t vertexCodeSize, fragmentCodeSize;
     char* vertexCode = ReadFile(vertexFile, &vertexCodeSize);
     char* fragmentCode = ReadFile(fragmentFile, &fragmentCodeSize);
@@ -140,7 +140,15 @@ void Shader_Load(Shader* pShader, const char* vertexFile, const char* fragmentFi
     //creating the color blending state
     VkPipelineColorBlendAttachmentState colorBlendAttachment = {0};
 	colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	colorBlendAttachment.blendEnable = VK_FALSE;
+	colorBlendAttachment.blendEnable = EnableAlpha == 1 ? VK_TRUE : VK_FALSE;
+    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+
+    // 4. The Alpha Blending (Usually keep the alpha channel consistent)
+    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 
 	VkPipelineColorBlendAttachmentState attachments[] = { colorBlendAttachment };
 

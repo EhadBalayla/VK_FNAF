@@ -83,7 +83,7 @@ void Renderer_CreateSets(Renderer* pRenderer) {
 
     VkPushConstantRange range = {0};
     range.offset = 0;
-    range.size = sizeof(float) * 16 + sizeof(int) * 2;
+    range.size = sizeof(float) * 16 + sizeof(float) * 4;
     range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {0};
@@ -136,6 +136,31 @@ void Renderer_CreateSets(Renderer* pRenderer) {
     if(vkAllocateDescriptorSets(pRenderer->device, &allocInfo, pRenderer->fullscreenSets) != VK_SUCCESS) {
         fprintf(stderr, "failed to allocate the offscreen to fullscreen texture sets");
         exit(EXIT_FAILURE);
+    }
+    //we dont need to update the descriptor set for that one, because the fullscreen buffer changes every frame so we update it after transitioning the layout
+
+    pRenderer->fontSets = (VkDescriptorSet*)malloc(sizeof(VkDescriptorSet) * pRenderer->MaxFramesInFlight);
+    if(vkAllocateDescriptorSets(pRenderer->device, &allocInfo, pRenderer->fontSets) != VK_SUCCESS) {
+        fprintf(stderr, "failed to create descriptor sets of the font");
+        exit(EXIT_FAILURE);
+    }
+
+    for(int i = 0; i < pRenderer->MaxFramesInFlight; i++) {
+        VkDescriptorImageInfo imgInfo = {0};
+        imgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imgInfo.imageView = GGame->fontTexture.imageView;
+        imgInfo.sampler = pRenderer->sampler;
+
+        VkWriteDescriptorSet setWrite = {0};
+        setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        setWrite.descriptorCount = 1;
+        setWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        setWrite.dstBinding = 0;
+        setWrite.pImageInfo = &imgInfo;
+        setWrite.dstArrayElement = 0;
+        setWrite.dstSet = pRenderer->fontSets[i];
+
+        vkUpdateDescriptorSets(pRenderer->device, 1, &setWrite, 0, NULL);
     }
 }
 
@@ -221,7 +246,7 @@ void CreateCommandBuffers(Renderer* pRenderer) {
 void CreateDescriptorPool(Renderer* pRenderer) {
     //the used for the sampler2D descriptors
     VkDescriptorPoolSize poolSize1 = {0};
-    poolSize1.descriptorCount = 3 * MAX_RENDERS + 3; //on descriptor for MAX_FRAMES_IN_FLIGHT * descriptors per pool size
+    poolSize1.descriptorCount = 3 * MAX_RENDERS + 6; //on descriptor for MAX_FRAMES_IN_FLIGHT * descriptors per pool size
     poolSize1.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
     uint32_t poolSizesCount = 1;
@@ -229,7 +254,7 @@ void CreateDescriptorPool(Renderer* pRenderer) {
 
     VkDescriptorPoolCreateInfo poolInfo = {0};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.maxSets = 3 * MAX_RENDERS + 3;
+    poolInfo.maxSets = 3 * MAX_RENDERS + 6;
     poolInfo.pPoolSizes = poolSizes;
     poolInfo.poolSizeCount = poolSizesCount;
 

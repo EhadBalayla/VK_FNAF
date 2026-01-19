@@ -41,6 +41,7 @@ typedef struct {
     VkDescriptorSetLayout singleTexLayout; //a set layout for a single texture 
     VkPipelineLayout pipelineLayout;
     VkDescriptorSet* fullscreenSets; //will be plopping the offscreen buffer into this for using in the swapchain
+    VkDescriptorSet* fontSets; //will be used for the font texture, because the font isn't a texture in the files its loaded dynamically from a TTF file
     VkDescriptorSet* textureSets[MAX_RENDERS];
 } Renderer;
 

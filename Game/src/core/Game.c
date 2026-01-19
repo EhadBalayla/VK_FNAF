@@ -76,14 +76,16 @@ void Game_Init(Game* pGame) {
     for(int i = 0; i < MAX_RENDERS; i++) {
         LoadTexture(&pGame->allTextures[i], textureLocations[i]);
     }
+    LoadFont(&pGame->m_Font); //also loads the font texture automatically
+    Renderer_CreateSets(&pGame->m_Renderer); //after finishing loading the textures, create descriptor sets for them
 
-    Renderer_CreateSets(&pGame->m_Renderer);
-
+    
     //load in the shaders
-    Shader_Load(&pGame->FullscreenShader, "Shaders/FullscreenShader_vert.spv", "Shaders/FullscreenShader_frag.spv", 1);
-    Shader_Load(&pGame->firstShader, "Shaders/BaseShader_vert.spv", "Shaders/BaseShader_frag.spv", 0);
-    Shader_Load(&pGame->atlasShader, "Shaders/AtlasShader_vert.spv", "Shaders/AtlasShader_frag.spv", 0);
-    Shader_Load(&pGame->UIShader, "Shaders/BaseShader_vert.spv", "Shaders/BaseShader_frag.spv", 1); //this is the same as the first shader, just for the swapchain and not the offscreen buffer
+    Shader_Load(&pGame->FullscreenShader, "Shaders/FullscreenShader_vert.spv", "Shaders/FullscreenShader_frag.spv", 1, 0);
+    Shader_Load(&pGame->firstShader, "Shaders/BaseShader_vert.spv", "Shaders/BaseShader_frag.spv", 0, 0);
+    Shader_Load(&pGame->atlasShader, "Shaders/AtlasShader_vert.spv", "Shaders/AtlasShader_frag.spv", 0, 0);
+    Shader_Load(&pGame->UIShader, "Shaders/BaseShader_vert.spv", "Shaders/BaseShader_frag.spv", 1, 0); //this is the same as the first shader, just for the swapchain and not the offscreen buffer
+    Shader_Load(&pGame->TextShader, "Shaders/TextShader_vert.spv", "Shaders/TextShader_frag.spv", 1, 1);
 
     //one last thing, initialize the in game UI
     OfficeHUDScreen_Initialize(&pGame->officeHUD);
@@ -120,11 +122,13 @@ void Game_Loop(Game* pGame) {
 void Game_Terminate(Game* pGame) {
     Renderer_wait(&pGame->m_Renderer);
 
+    Shader_Delete(&pGame->TextShader);
     Shader_Delete(&pGame->UIShader);
     Shader_Delete(&pGame->firstShader);
     Shader_Delete(&pGame->FullscreenShader);
     Shader_Delete(&pGame->atlasShader);
 
+    DeleteTexture(&pGame->fontTexture);
     for(int i = 0; i < MAX_RENDERS; i++) {
         DeleteTexture(&pGame->allTextures[i]);
     }

@@ -10,6 +10,7 @@ typedef struct {
 } Texture;
 
 void LoadTexture(Texture* pTexture, const char* path);
+void LoadTexturePixels(Texture* pTexture, unsigned char* data, int Width, int Height);
 void DeleteTexture(Texture* pTexture);
 
 #endif
