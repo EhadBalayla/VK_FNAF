@@ -3,10 +3,12 @@
 
 #include "../Widgets/TextDisplayer.h"
 #include "../Widgets/UIHoverable.h"
+#include "../Widgets/UIButton.h"
 
 typedef struct {
     UIHoverable monitorHover; //will later be redone into a hoverable
     TextDisplayer clockText;
+    UIButton testButton;
 } OfficeHUDScreen;
 
 void OfficeHUDScreen_Initialize(OfficeHUDScreen* pScreen);

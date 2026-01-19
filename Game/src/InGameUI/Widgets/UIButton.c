@@ -3,30 +3,36 @@
 #include "../../core/Game.h"
 #include <cglm/cglm.h>
 
-#include <stdio.h>
-
 void UpdateButton(UIButton* pButton) {
-    /*float orthoWidth  = pButton->Right - pButton->Left;
-    float orthoHeight = pButton->Bottom - pButton->Top;
+    float* m = pButton->projMat;
 
-    float realXPos = ((pButton->position[0] - pButton->Left) / orthoWidth) * GGame->Width;
-    float realYPos = ((pButton->position[1] - pButton->Top) / orthoHeight) * GGame->Height;
+    float halfWidth = 1.0f / m[0];
+    float halfHeight = 1.0f / m[5];
+    float centerX = -m[12] / m[0];
+    float centerY = -m[13] / m[5];
+
+    float Right  = centerX + halfWidth;
+    float Bottom = centerY - halfHeight;
+    float Left   = centerX - halfWidth;
+    float Top    = centerY + halfHeight;
+    
+    float realXPos = (pButton->position[0] - Left) / (Right - Left) * GGame->Width;
+    float realYPos = (Bottom - pButton->position[1]) / (Bottom - Top) * GGame->Height;
 
     double MouseX = GGame->MouseX;
     double MouseY = GGame->MouseY;
 
     if ((MouseX > realXPos - pButton->scale[0] && MouseX < realXPos + pButton->scale[0]) &&
 		(MouseY > realYPos - pButton->scale[1] && MouseY < realYPos + pButton->scale[1])) {
-        if(!pButton->IsHovered) {
-            pButton->IsHovered = 1;
-            printf("hovering over a button\n");
+        if(GGame->SelectedButton == NULL) {
+            GGame->SelectedButton = pButton;
         }
     }
     else {
-        if(pButton->IsHovered) {
-            pButton->IsHovered = 0;
+        if(GGame->SelectedButton == pButton) {
+            GGame->SelectedButton = NULL;
         }
-    }*/
+    }
 }
 void RenderButton(UIButton* pButton) {
     mat4 trans;

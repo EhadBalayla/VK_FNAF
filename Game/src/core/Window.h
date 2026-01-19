@@ -32,5 +32,6 @@ typedef struct GLFWwindow GLFWwindow;
 void Window_SetResizeCallback(Window* pWindow, void (*GLFWframebuffersizefun)(GLFWwindow* GLFWwindow, int width, int height));
 void Window_SetKeyCallback(Window* pWindow, void (*GLFWkeyfun)(GLFWwindow *window, int key, int scancode, int action, int mods));
 void Window_SetMouseCallback(Window* pWindow, void (*GLFWcursorposfun)(GLFWwindow *window, double xpos, double ypos));
+void Window_SetMouseButtonCallback(Window* pWindow, void (*GLFWmousebuttonfun)(GLFWwindow *window, int button, int action, int mods));
 
 #endif

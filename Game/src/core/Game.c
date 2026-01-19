@@ -35,6 +35,7 @@ float Left_Top[16];
 void Window_Resize(GLFWwindow* GLFWwindow, int width, int height);
 void Window_KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void Window_MouseCallback(GLFWwindow *window, double xpos, double ypos);
+void Window_MouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
 
 void Game_RenderOffice(Game* pGame);
 void Game_RenderOfficeHud(Game* pGame);
@@ -54,6 +55,7 @@ void Game_Init(Game* pGame) {
 
     pGame->GameTime = 0.0f;
 
+    pGame->SelectedButton = NULL;
 
     //create the Window and initialize context and swapchain
     Window_InitGLFW();
@@ -64,6 +66,7 @@ void Game_Init(Game* pGame) {
     Window_SetResizeCallback(&pGame->m_Window, Window_Resize);
     Window_SetKeyCallback(&pGame->m_Window, Window_KeyCallback);
     Window_SetMouseCallback(&pGame->m_Window, Window_MouseCallback);
+    Window_SetMouseButtonCallback(&pGame->m_Window, Window_MouseButtonCallback);
 
     //give the renderer the necessary handles and initialize the renderer
     pGame->m_Renderer.instance = pGame->m_Window.m_Context.instance;
@@ -172,6 +175,14 @@ void Window_KeyCallback(GLFWwindow *window, int key, int scancode, int action, i
 void Window_MouseCallback(GLFWwindow *window, double xpos, double ypos) {
     GGame->MouseX = xpos;
     GGame->MouseY = ypos;
+}
+void Window_MouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {
+    if(action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT) {
+        if(GGame->SelectedButton != NULL) {
+            UIButton* button = GGame->SelectedButton;
+            button->OnClick(button);
+        }
+    }
 }
 void Game_RenderOffice(Game* pGame) {
     double midRelX = GGame->MouseX - GGame->Width / 2.0;

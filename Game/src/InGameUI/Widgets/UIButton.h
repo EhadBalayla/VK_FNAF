@@ -8,9 +8,6 @@ typedef struct {
 
     int texID;
 
-    int IsHovered;
-
-    void (*OnHovered)(void* pButton);
     void (*OnClick)(void* pButton);
 } UIButton;
 

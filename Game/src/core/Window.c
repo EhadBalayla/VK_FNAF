@@ -191,3 +191,6 @@ void Window_SetKeyCallback(Window* pWindow, void (*GLFWkeyfun)(GLFWwindow *windo
 void Window_SetMouseCallback(Window* pWindow, void (*GLFWcursorposfun)(GLFWwindow *window, double xpos, double ypos)) {
     glfwSetCursorPosCallback(pWindow->m_GLFWwindow, GLFWcursorposfun);
 }
+void Window_SetMouseButtonCallback(Window* pWindow, void (*GLFWmousebuttonfun)(GLFWwindow *window, int button, int action, int mods)) {
+    glfwSetMouseButtonCallback(pWindow->m_GLFWwindow, GLFWmousebuttonfun);
+}

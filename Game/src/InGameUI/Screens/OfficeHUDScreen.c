@@ -31,10 +31,15 @@ void FlipMonitorUp(void* pHoverable) {
     printf("hovered over the monitor hover\n");
 }
 
+void PressButton(void* pButton) {
+    printf("pressed a test button BOIII\n");
+}
+
 
 void OfficeHUDScreen_Initialize(OfficeHUDScreen* pScreen) {
     UIHoverable* monitorHover = &pScreen->monitorHover;
     TextDisplayer* clockText = &pScreen->clockText;
+    UIButton* testButton = &pScreen->testButton;
 
     //setting the monitor hover
     monitorHover->position[0] = 0.0f; monitorHover->position[1] = 50.0f;
@@ -49,13 +54,21 @@ void OfficeHUDScreen_Initialize(OfficeHUDScreen* pScreen) {
     clockText->position[0] = 100.0f; clockText->position[1] = 100.0f;
     clockText->textScale = 1.0f;
     clockText->projMat = Left_Top;
+
+    testButton->position[0] = 400.0f; testButton->position[1] = 100.0f;
+    testButton->scale[0] = 50.0f; testButton->scale[1] = 50.0f;
+    testButton->texID = MONITOR_HOVER;
+    testButton->OnClick = PressButton;
+    testButton->projMat = Center;
 }
 void OfficeHUDScreen_Update(OfficeHUDScreen* pScreen) {
     UpdateHoverable(&pScreen->monitorHover);
+    UpdateButton(&pScreen->testButton);
 }
 void OfficeHUDScreen_Render(OfficeHUDScreen* pScreen) {
     UIHoverable* monitorHover = &pScreen->monitorHover;
     TextDisplayer* clockText = &pScreen->clockText;
+    UIButton* testButton = &pScreen->testButton;
 
     if((int)GGame->GameTime != lastTime) {
         lastTime = (int)GGame->GameTime;
@@ -66,4 +79,5 @@ void OfficeHUDScreen_Render(OfficeHUDScreen* pScreen) {
 
     RenderHoverable(monitorHover);
     RenderText(clockText);
+    RenderButton(testButton);
 }

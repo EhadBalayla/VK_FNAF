@@ -50,6 +50,8 @@ typedef struct {
     double MouseY;
 
     float GameTime;
+
+    void* SelectedButton;
 } Game;
 
 extern Game* GGame; //a global pointer for the game instance
