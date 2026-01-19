@@ -43,6 +43,7 @@ void Renderer_Terminate(Renderer* pRenderer) {
 
 
     free(pRenderer->fullscreenSets);
+    free(pRenderer->fontSets);
     for(int i = 0; i < MAX_RENDERS; i++) {
         free(pRenderer->textureSets[i]);
     }

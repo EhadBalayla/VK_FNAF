@@ -1,6 +1,8 @@
 #include <cglm/cglm.h>
 #include "../../core/Game.h"
 
+#include <stdio.h>
+
 char* GetGameTime(int time) { //remember to free since it mallocs
     char* buffer = malloc(sizeof(char) * 5); //for each digit in the clock and the :
     if (time / 60 == 0) {
@@ -8,7 +10,7 @@ char* GetGameTime(int time) { //remember to free since it mallocs
         buffer[1] = '2';
     } else {
         buffer[0] = '0';
-        buffer[1] = time / 60;
+        buffer[1] = '0' + time / 60;
     }
     buffer[2] = ':';
 
@@ -24,27 +26,36 @@ char* GetGameTime(int time) { //remember to free since it mallocs
 
 int lastTime = 0;
 
+
+void FlipMonitorUp(void* pHoverable) {
+    printf("hovered over the monitor hover\n");
+}
+
+
 void OfficeHUDScreen_Initialize(OfficeHUDScreen* pScreen) {
-    ImageDisplayer* monitorHover = &pScreen->monitorHover;
+    UIHoverable* monitorHover = &pScreen->monitorHover;
     TextDisplayer* clockText = &pScreen->clockText;
 
     //setting the monitor hover
     monitorHover->position[0] = 0.0f; monitorHover->position[1] = 50.0f;
     monitorHover->scale[0] = 300.0f; monitorHover->scale[1] = 30.0f;
     monitorHover->texID = MONITOR_HOVER;
+    monitorHover->IsHovered = 0;
+    monitorHover->OnHovered = FlipMonitorUp;
+    monitorHover->projMat = Center_Bottom;
 
     //setting the text
     SetText(clockText, "12:00", 5);
     clockText->position[0] = 100.0f; clockText->position[1] = 100.0f;
     clockText->textScale = 1.0f;
+    clockText->projMat = Left_Top;
+}
+void OfficeHUDScreen_Update(OfficeHUDScreen* pScreen) {
+    UpdateHoverable(&pScreen->monitorHover);
 }
 void OfficeHUDScreen_Render(OfficeHUDScreen* pScreen) {
-    ImageDisplayer* monitorHover = &pScreen->monitorHover;
+    UIHoverable* monitorHover = &pScreen->monitorHover;
     TextDisplayer* clockText = &pScreen->clockText;
-    
-    //setting the projection matrices
-    monitorHover->Left = -GGame->Width / 2.0f; monitorHover->Right = GGame->Width / 2.0f; monitorHover->Bottom = -GGame->Height; monitorHover->Top = 0.0f;
-    clockText->Left = 0.0f; clockText->Right = GGame->Width; clockText->Bottom = 0.0f; clockText->Top = GGame->Height;
 
     if((int)GGame->GameTime != lastTime) {
         lastTime = (int)GGame->GameTime;
@@ -53,6 +64,6 @@ void OfficeHUDScreen_Render(OfficeHUDScreen* pScreen) {
         free(text);
     }
 
-    Render_Image(monitorHover);
+    RenderHoverable(monitorHover);
     RenderText(clockText);
 }

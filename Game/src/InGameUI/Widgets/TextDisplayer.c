@@ -26,12 +26,9 @@ void RenderText(TextDisplayer* pText) {
         glm_translate(trans, (vec3){charXPos, charYPos, 0.0f});
         glm_scale(trans, (vec3){glyph->size[0] * pText->textScale, glyph->size[1] * pText->textScale, 1.0f});
 
-        mat4 proj;
-        glm_ortho(pText->Left, pText->Right, pText->Bottom, pText->Top, -1.0f, 1.0f, proj);
-
         mat4 overall;
         glm_mat4_identity(overall);
-        glm_mat4_mul(proj, trans, overall);
+        glm_mat4_mul(pText->projMat, trans, overall);
     
         vkCmdPushConstants(GGame->m_Renderer.commandBuffers[currentFrame], GGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall);
         vkCmdPushConstants(GGame->m_Renderer.commandBuffers[currentFrame], GGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(mat4), sizeof(vec2), glyph->uvs);

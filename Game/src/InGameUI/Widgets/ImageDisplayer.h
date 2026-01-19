@@ -6,8 +6,7 @@ typedef float vec2[2];
 typedef struct {
     vec2 position;
     vec2 scale;
-
-    float Left, Right, Bottom, Top; //for the projection
+    void* projMat;
     int texID;
 } ImageDisplayer;
 

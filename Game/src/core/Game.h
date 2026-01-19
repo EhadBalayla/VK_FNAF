@@ -9,6 +9,13 @@
 
 #include "../InGameUI/Screens/OfficeHUDScreen.h"
 
+//typedef float vec4[4];
+//typedef vec4 mat4[4];
+
+extern float Center[16];
+extern float Center_Bottom[16];
+extern float Left_Top[16];
+
 typedef struct {
     //the entire systems
     Window m_Window;

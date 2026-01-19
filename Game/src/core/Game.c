@@ -27,6 +27,9 @@ char* textureLocations[] = {
 
 
 Game* GGame = NULL;
+float Center[16];
+float Center_Bottom[16];
+float Left_Top[16];
 
 //function declarations
 void Window_Resize(GLFWwindow* GLFWwindow, int width, int height);
@@ -50,6 +53,7 @@ void Game_Init(Game* pGame) {
     pGame->MouseY = 0.0;
 
     pGame->GameTime = 0.0f;
+
 
     //create the Window and initialize context and swapchain
     Window_InitGLFW();
@@ -80,7 +84,6 @@ void Game_Init(Game* pGame) {
     }
     LoadFont(&pGame->m_Font); //also loads the font texture automatically
     Renderer_CreateSets(&pGame->m_Renderer); //after finishing loading the textures, create descriptor sets for them
-
     
     //load in the shaders
     Shader_Load(&pGame->FullscreenShader, "Shaders/FullscreenShader_vert.spv", "Shaders/FullscreenShader_frag.spv", 1, 0);
@@ -103,6 +106,13 @@ void Game_Loop(Game* pGame) {
 
         pGame->GameTime += pGame->DeltaTime;
 
+        //apply the orthographic projection matrices
+        glm_ortho(-pGame->Width / 2.0f, pGame->Width / 2.0f, pGame->Height / 2.0f, -pGame->Height / 2.0f, -1.0f, 1.0f, (vec4*)Center);
+        glm_ortho(-pGame->Width / 2.0f, pGame->Width / 2.0f, pGame->Height, 0.0f, -1.0f, 1.0f, (vec4*)Center_Bottom);
+        glm_ortho(0.0f, pGame->Width, 0.0f, pGame->Height, -1.0f, 1.0f, (vec4*)Left_Top);
+
+        OfficeHUDScreen_Update(&pGame->officeHUD);
+
         //draw the offscreen buffer
         Renderer_StartDraw(&pGame->m_Renderer);
 
@@ -110,6 +120,7 @@ void Game_Loop(Game* pGame) {
 
         Renderer_EndDraw(&pGame->m_Renderer);
 
+        
 
         //draw the swapchain
         Window_StartScreen(&pGame->m_Window);
