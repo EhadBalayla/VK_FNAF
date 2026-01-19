@@ -95,7 +95,7 @@ void Window_PollEvents() {
     glfwPollEvents();
 }
 
-void Window_DrawScreen(Window* pWindow) {
+void Window_StartScreen(Window* pWindow) {
 
     VkImageMemoryBarrier imageBarrier = {0};
     imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -172,7 +172,8 @@ void Window_DrawScreen(Window* pWindow) {
     vkCmdBindDescriptorSets(GGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, GGame->m_Renderer.pipelineLayout, 0, 1, &GGame->m_Renderer.fullscreenSets[currentFrame], 0, NULL);
     vkCmdBindPipeline(GGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, GGame->FullscreenShader.graphicsPipeline);
     vkCmdDraw(GGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
-
+}
+void Window_EndScreen(Window* pWindow) {
     vkCmdEndRenderPass(GGame->m_Renderer.commandBuffers[currentFrame]);
 }
 

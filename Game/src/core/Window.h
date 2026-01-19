@@ -23,7 +23,8 @@ void Window_StartFrame(Window* pWindow);
 void Window_EndFrame(Window* pWindow);
 void Window_PollEvents();
 
-void Window_DrawScreen(Window* pWindow);
+void Window_StartScreen(Window* pWindow);
+void Window_EndScreen(Window* pWindow);
 
 int Window_ShouldClose(Window* pWindow);
 

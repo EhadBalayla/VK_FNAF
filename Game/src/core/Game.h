@@ -6,6 +6,8 @@
 #include "Shader.h"
 #include "Texture.h"
 
+#include "../InGameUI/Screens/OfficeHUDScreen.h"
+
 typedef struct {
     //the entire systems
     Window m_Window;
@@ -22,7 +24,10 @@ typedef struct {
     Shader FullscreenShader;
     Shader firstShader;
     Shader atlasShader;
+    Shader UIShader; //same as the firstShader, but for rendering to the swapchain, for in game UI
 
+    //in game UI screens
+    OfficeHUDScreen officeHUD;
 
 
     //real time parameters to be used
