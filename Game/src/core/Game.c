@@ -49,6 +49,8 @@ void Game_Init(Game* pGame) {
     pGame->MouseX = 0.0;
     pGame->MouseY = 0.0;
 
+    pGame->GameTime = 0.0f;
+
     //create the Window and initialize context and swapchain
     Window_InitGLFW();
     Window_CreateWindow(&pGame->m_Window, pGame->Width, pGame->Height, "VK_FNAF");
@@ -98,6 +100,8 @@ void Game_Loop(Game* pGame) {
         double currentTime = glfwGetTime();
         pGame->DeltaTime = currentTime - LastTime;
         LastTime = currentTime;
+
+        pGame->GameTime += pGame->DeltaTime;
 
         //draw the offscreen buffer
         Renderer_StartDraw(&pGame->m_Renderer);

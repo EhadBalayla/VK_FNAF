@@ -18,13 +18,13 @@ void RenderText(TextDisplayer* pText) {
     for(int i = 0; i < pText->textCount; i++) {
         Glyph* glyph = &GGame->m_Font.glyphs[pText->buffer[i]];
 
-        float charXPos = pText->position[0] + (cursorX + glyph->bearing[0]) * pText->textScale;
+        float charXPos = pText->position[0] + cursorX + glyph->bearing[0] * pText->textScale;
         float charYPos = pText->position[1] - glyph->bearing[1] * pText->textScale;
 
         mat4 trans;
         glm_mat4_identity(trans);
         glm_translate(trans, (vec3){charXPos, charYPos, 0.0f});
-        glm_scale(trans, (vec3){(glyph->size[0]) * pText->textScale, (glyph->size[1]) * pText->textScale, 1.0f});
+        glm_scale(trans, (vec3){glyph->size[0] * pText->textScale, glyph->size[1] * pText->textScale, 1.0f});
 
         mat4 proj;
         glm_ortho(pText->Left, pText->Right, pText->Bottom, pText->Top, -1.0f, 1.0f, proj);
