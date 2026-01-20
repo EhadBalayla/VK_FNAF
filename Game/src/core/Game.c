@@ -17,11 +17,13 @@ double lastMouseX = 0.0;
 double lastMouseY = 0.0;
 
 float fanSequence = 0.0f;
+float monitorFlipSequence = 0.0f;
 
 char* textureLocations[] = {
     "Textures/Debug_Office.png",
     "Textures/Debug_Fan_Reborn.png",
-    "Textures/debug_monitorFlip.jpg"
+    "Textures/debug_monitorFlip.jpg",
+    "Textures/Debug_MonitorFlip.png"
 };
 
 
@@ -37,8 +39,13 @@ void Window_KeyCallback(GLFWwindow *window, int key, int scancode, int action, i
 void Window_MouseCallback(GLFWwindow *window, double xpos, double ypos);
 void Window_MouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
 
+void Game_Tick(Game* pGame); //basically a function dedicated to ticking the game, instead of needing to spam logic in Game_Loop
+void Game_RenderGameLayer(Game* pGame); //a function dedicated to rendering what goes into the offscreen buffer instead of spamming logic in Game_Loop
+void Game_RenderUILayer(Game* pGame); //a function dedicated to rendering the in game UI instead of needing to spam logic in Game_Loop
+
+//helper functions for rendering the in game renders and a few miscaleanous (like the monitor flip)
 void Game_RenderOffice(Game* pGame);
-void Game_RenderOfficeHud(Game* pGame);
+void Game_RenderMonitorFlip(Game* pGame);
 
 
 void Game_Init(Game* pGame) {
@@ -56,6 +63,8 @@ void Game_Init(Game* pGame) {
     pGame->GameTime = 0.0f;
 
     pGame->SelectedButton = NULL;
+
+    pGame->states = Office;
 
     //create the Window and initialize context and swapchain
     Window_InitGLFW();
@@ -94,32 +103,29 @@ void Game_Init(Game* pGame) {
     Shader_Load(&pGame->atlasShader, "Shaders/AtlasShader_vert.spv", "Shaders/AtlasShader_frag.spv", 0, 0);
     Shader_Load(&pGame->UIShader, "Shaders/BaseShader_vert.spv", "Shaders/BaseShader_frag.spv", 1, 0); //this is the same as the first shader, just for the swapchain and not the offscreen buffer
     Shader_Load(&pGame->TextShader, "Shaders/TextShader_vert.spv", "Shaders/TextShader_frag.spv", 1, 1);
+    Shader_Load(&pGame->UIAtlasShader, "Shaders/AtlasShader_vert.spv", "Shaders/AtlasShader_frag.spv", 1, 1); //same as the atlas shader but for the swapchain and with alpha blending
 
     //one last thing, initialize the in game UI
     OfficeHUDScreen_Initialize(&pGame->officeHUD);
+    MonitorHUDScreen_Initialize(&pGame->monitorHUD);
 }
 void Game_Loop(Game* pGame) {
     while(!Window_ShouldClose(&pGame->m_Window)) {
         Window_PollEvents();
         Window_StartFrame(&pGame->m_Window);
 
+        //simply updating DeltaTime
         double currentTime = glfwGetTime();
         pGame->DeltaTime = currentTime - LastTime;
         LastTime = currentTime;
 
-        pGame->GameTime += pGame->DeltaTime;
-
-        //apply the orthographic projection matrices
-        glm_ortho(-pGame->Width / 2.0f, pGame->Width / 2.0f, pGame->Height / 2.0f, -pGame->Height / 2.0f, -1.0f, 1.0f, (vec4*)Center);
-        glm_ortho(-pGame->Width / 2.0f, pGame->Width / 2.0f, pGame->Height, 0.0f, -1.0f, 1.0f, (vec4*)Center_Bottom);
-        glm_ortho(0.0f, pGame->Width, 0.0f, pGame->Height, -1.0f, 1.0f, (vec4*)Left_Top);
-
-        OfficeHUDScreen_Update(&pGame->officeHUD);
+        //ticking the game
+        Game_Tick(pGame);
 
         //draw the offscreen buffer
         Renderer_StartDraw(&pGame->m_Renderer);
 
-        Game_RenderOffice(pGame);
+        Game_RenderGameLayer(pGame);
 
         Renderer_EndDraw(&pGame->m_Renderer);
 
@@ -128,7 +134,7 @@ void Game_Loop(Game* pGame) {
         //draw the swapchain
         Window_StartScreen(&pGame->m_Window);
 
-        OfficeHUDScreen_Render(&pGame->officeHUD);
+        Game_RenderUILayer(pGame);
 
         Window_EndScreen(&pGame->m_Window);
 
@@ -140,6 +146,7 @@ void Game_Loop(Game* pGame) {
 void Game_Terminate(Game* pGame) {
     Renderer_wait(&pGame->m_Renderer);
 
+    Shader_Delete(&pGame->UIAtlasShader);
     Shader_Delete(&pGame->TextShader);
     Shader_Delete(&pGame->UIShader);
     Shader_Delete(&pGame->firstShader);
@@ -184,6 +191,80 @@ void Window_MouseButtonCallback(GLFWwindow *window, int button, int action, int 
         }
     }
 }
+
+void Game_Tick(Game* pGame) {
+    pGame->GameTime += pGame->DeltaTime;
+
+    //apply the orthographic projection matrices
+    glm_ortho(-pGame->Width / 2.0f, pGame->Width / 2.0f, -pGame->Height / 2.0f, pGame->Height / 2.0f, -1.0f, 1.0f, (vec4*)Center);
+    glm_ortho(-pGame->Width / 2.0f, pGame->Width / 2.0f, pGame->Height, 0.0f, -1.0f, 1.0f, (vec4*)Center_Bottom);
+    glm_ortho(0.0f, pGame->Width, 0.0f, pGame->Height, -1.0f, 1.0f, (vec4*)Left_Top);
+    
+    switch(pGame->states) {
+        case Office: {
+            OfficeHUDScreen_Update(&pGame->officeHUD);
+            break;
+        }
+        case FlippingUp: {
+            monitorFlipSequence += pGame->DeltaTime;
+            if(monitorFlipSequence >= 0.1f) {
+                monitorFlipSequence = 0.1f;
+                pGame->states = Monitor;
+            }
+            break;
+        }
+        case Monitor: {
+            MonitorHUDScreen_Update(&pGame->monitorHUD);
+            break;
+        }
+        case FlippingDown: {
+            monitorFlipSequence -= pGame->DeltaTime;
+            if(monitorFlipSequence <= 0.0f) {
+                monitorFlipSequence = 0.0f;
+                pGame->states = Office;
+            }
+            break;
+        }
+    }
+}
+void Game_RenderGameLayer(Game* pGame) {
+    switch(pGame->states) {
+        case Office: {
+            Game_RenderOffice(pGame);
+            break;
+        }
+        case FlippingUp: {
+            Game_RenderOffice(pGame);
+            break;
+        }
+        case Monitor: {
+
+            break;
+        }
+    }
+}
+void Game_RenderUILayer(Game* pGame) {
+    switch(pGame->states) {
+        case Office: {
+            OfficeHUDScreen_Render(&pGame->officeHUD);
+            break;
+        }
+        case FlippingUp: {
+            Game_RenderMonitorFlip(pGame);
+            break;
+        }
+        case Monitor: {
+            MonitorHUDScreen_Render(&pGame->monitorHUD);
+            break;
+        }
+        case FlippingDown: {
+            Game_RenderMonitorFlip(pGame);
+            break;
+        }
+    }
+}
+
+
 void Game_RenderOffice(Game* pGame) {
     double midRelX = GGame->MouseX - GGame->Width / 2.0;
     double maxDisFromMid = GGame->Width / 2.0;
@@ -234,5 +315,24 @@ void Game_RenderOffice(Game* pGame) {
     vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall2);
     vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(mat4), sizeof(int), &fanIdx);
     vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(mat4) + sizeof(int), sizeof(int), &fanFrames);
+    vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
+}
+void Game_RenderMonitorFlip(Game* pGame) {
+    int flippingFrame = monitorFlipSequence * 10.0f * 24.0f;
+    int flipFrames = 24;
+
+    mat4 pos;
+    glm_mat4_identity(pos);
+    glm_scale(pos, (vec3){pGame->Width / 2.0f, pGame->Height / 2.0f, 0.0f});
+
+    mat4 overall;
+    glm_mat4_identity(overall);
+    glm_mat4_mul(Center, pos, overall);
+
+    vkCmdBindDescriptorSets(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->m_Renderer.pipelineLayout, 0, 1, &pGame->m_Renderer.textureSets[MONITOR_FLIP][currentFrame], 0, NULL);
+    vkCmdBindPipeline(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->UIAtlasShader.graphicsPipeline);
+    vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame], pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall);
+    vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame], pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(mat4), sizeof(float), &flippingFrame);
+    vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame], pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(mat4) + sizeof(float), sizeof(float), &flipFrames);
     vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
 }

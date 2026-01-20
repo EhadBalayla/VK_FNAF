@@ -1,3 +1,5 @@
+#include "OfficeHUDScreen.h"
+
 #include <cglm/cglm.h>
 #include "../../core/Game.h"
 
@@ -28,7 +30,9 @@ int lastTime = 0;
 
 
 void FlipMonitorUp(void* pHoverable) {
-    printf("hovered over the monitor hover\n");
+    if(GGame->states == Office) {
+        GGame->states = FlippingUp;
+    }
 }
 
 void PressButton(void* pButton) {
