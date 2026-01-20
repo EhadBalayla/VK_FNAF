@@ -22,6 +22,13 @@ typedef enum {
     FlippingDown //for when the monitor is in the process of being flipped down
 } InGameState;
 
+typedef enum {
+    CAM1,
+    CAM2,
+    CAM3,
+    CAM4
+} SelectedCamera;
+
 typedef struct {
     //the entire systems
     Window m_Window;
@@ -62,6 +69,7 @@ typedef struct {
     void* SelectedButton;
 
     InGameState states;
+    SelectedCamera selectedCam;
 } Game;
 
 extern Game* GGame; //a global pointer for the game instance

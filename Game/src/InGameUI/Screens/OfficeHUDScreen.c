@@ -43,10 +43,11 @@ void PressButton(void* pButton) {
 void OfficeHUDScreen_Initialize(OfficeHUDScreen* pScreen) {
     UIHoverable* monitorHover = &pScreen->monitorHover;
     TextDisplayer* clockText = &pScreen->clockText;
+    TextDisplayer* sundayText = &pScreen->sundayText;
     UIButton* testButton = &pScreen->testButton;
 
     //setting the monitor hover
-    monitorHover->position[0] = 0.0f; monitorHover->position[1] = 50.0f;
+    monitorHover->position[0] = 0.0f; monitorHover->position[1] = 30.0f;
     monitorHover->scale[0] = 300.0f; monitorHover->scale[1] = 30.0f;
     monitorHover->texID = MONITOR_HOVER;
     monitorHover->IsHovered = 0;
@@ -58,6 +59,12 @@ void OfficeHUDScreen_Initialize(OfficeHUDScreen* pScreen) {
     clockText->position[0] = 100.0f; clockText->position[1] = 100.0f;
     clockText->textScale = 1.0f;
     clockText->projMat = Left_Top;
+
+    //setting the sunday text
+    SetText(sundayText, "Night 1 - Sunday", 16);
+    sundayText->position[0] = 100.0f; sundayText->position[1] = 150.0f;
+    sundayText->textScale = 0.75f;
+    sundayText->projMat = Left_Top;
 
     testButton->position[0] = 400.0f; testButton->position[1] = 100.0f;
     testButton->scale[0] = 50.0f; testButton->scale[1] = 50.0f;
@@ -72,6 +79,7 @@ void OfficeHUDScreen_Update(OfficeHUDScreen* pScreen) {
 void OfficeHUDScreen_Render(OfficeHUDScreen* pScreen) {
     UIHoverable* monitorHover = &pScreen->monitorHover;
     TextDisplayer* clockText = &pScreen->clockText;
+    TextDisplayer* sundayText = &pScreen->sundayText;
     UIButton* testButton = &pScreen->testButton;
 
     if((int)GGame->GameTime != lastTime) {
@@ -83,5 +91,6 @@ void OfficeHUDScreen_Render(OfficeHUDScreen* pScreen) {
 
     RenderHoverable(monitorHover);
     RenderText(clockText);
+    RenderText(sundayText);
     RenderButton(testButton);
 }

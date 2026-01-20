@@ -8,6 +8,7 @@
 typedef struct {
     UIHoverable monitorHover; //will later be redone into a hoverable
     TextDisplayer clockText;
+    TextDisplayer sundayText;
     UIButton testButton;
 } OfficeHUDScreen;
 

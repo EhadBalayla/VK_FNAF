@@ -23,7 +23,17 @@ char* textureLocations[] = {
     "Textures/Debug_Office.png",
     "Textures/Debug_Fan_Reborn.png",
     "Textures/debug_monitorFlip.jpg",
-    "Textures/Debug_MonitorFlip.png"
+    "Textures/Debug_MonitorFlip.png",
+    "Textures/Debug_CameraStatic.png",
+    "Textures/Debug_CameraUnselected.png",
+    "Textures/Debug_CameraSelected.png",
+    "Textures/Debug_CameraStaticAlpha.png",
+    "Textures/Debug_CAM1.png",
+    "Textures/Debug_CAM2.png",
+    "Textures/Debug_CAM3.png",
+    "Textures/Debug_CAM4.png",
+    "Textures/Debug_LeftDoor.png",
+    "Textures/Debug_RightDoor.png"
 };
 
 
@@ -45,6 +55,10 @@ void Game_RenderUILayer(Game* pGame); //a function dedicated to rendering the in
 
 //helper functions for rendering the in game renders and a few miscaleanous (like the monitor flip)
 void Game_RenderOffice(Game* pGame);
+void Game_RenderCam1(Game* pGame);
+void Game_RenderCam2(Game* pGame);
+void Game_RenderCam3(Game* pGame);
+void Game_RenderCam4(Game* pGame);
 void Game_RenderMonitorFlip(Game* pGame);
 
 
@@ -65,6 +79,7 @@ void Game_Init(Game* pGame) {
     pGame->SelectedButton = NULL;
 
     pGame->states = Office;
+    pGame->selectedCam = CAM1;
 
     //create the Window and initialize context and swapchain
     Window_InitGLFW();
@@ -238,7 +253,24 @@ void Game_RenderGameLayer(Game* pGame) {
             break;
         }
         case Monitor: {
-
+            switch(pGame->selectedCam) {
+                case CAM1:
+                    Game_RenderCam1(pGame);
+                break;
+                case CAM2:
+                    Game_RenderCam2(pGame);
+                break;
+                case CAM3:
+                    Game_RenderCam3(pGame);
+                break;
+                case CAM4:
+                    Game_RenderCam4(pGame);
+                break;
+            }
+            break;
+        }
+        case FlippingDown: {
+            Game_RenderOffice(pGame);
             break;
         }
     }
@@ -302,10 +334,13 @@ void Game_RenderOffice(Game* pGame) {
     int fanFrames = 24;
     int fanIdx = (int)fanSequence % 24;
 
+    float relationX = (float)GGame->Width / 1600.0f;
+    float relationY = (float)GGame->Height / 900.0f;
+
     mat4 trans2;
     glm_mat4_identity(trans2);
-    glm_translate(trans2, (vec3){-340.0f + pGame->horizontalScroll, 232.0f, 0.0f});
-    glm_scale(trans2, (vec3){132.0f, 160.0f, 1.0f});
+    glm_translate(trans2, (vec3){-340.0f * relationX + pGame->horizontalScroll, 232.0f * relationY, 0.0f});
+    glm_scale(trans2, (vec3){132.0f * relationX, 160.0f * relationY, 1.0f});
 
     mat4 overall2;
     glm_mat4_mul(proj, trans2, overall2);
@@ -315,6 +350,82 @@ void Game_RenderOffice(Game* pGame) {
     vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall2);
     vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(mat4), sizeof(int), &fanIdx);
     vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(mat4) + sizeof(int), sizeof(int), &fanFrames);
+    vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
+}
+void Game_RenderCam1(Game* pGame) {
+    mat4 proj;
+    glm_ortho(-pGame->Width / 2.0f, pGame->Width / 2.0f, pGame->Height / 2.0f, -pGame->Height / 2.0f, -1.0, 1.0, proj);
+    proj[1][1] *= -1;
+
+    mat4 trans;
+    glm_mat4_identity(trans);
+    glm_translate(trans, (vec3){0.0f, 0.0f, 0.0f});
+    glm_scale(trans, (vec3){pGame->Width, pGame->Height, 1.0f});
+
+    mat4 overall;
+    glm_mat4_mul(proj, trans, overall);
+
+    //render cam1
+    vkCmdBindDescriptorSets(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->m_Renderer.pipelineLayout, 0, 1, &pGame->m_Renderer.textureSets[TCAM1][currentFrame], 0, NULL);
+    vkCmdBindPipeline(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->firstShader.graphicsPipeline);
+    vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall);
+    vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
+}
+void Game_RenderCam2(Game* pGame) {
+    mat4 proj;
+    glm_ortho(-pGame->Width / 2.0f, pGame->Width / 2.0f, pGame->Height / 2.0f, -pGame->Height / 2.0f, -1.0, 1.0, proj);
+    proj[1][1] *= -1;
+
+    mat4 trans;
+    glm_mat4_identity(trans);
+    glm_translate(trans, (vec3){0.0f, 0.0f, 0.0f});
+    glm_scale(trans, (vec3){pGame->Width, pGame->Height, 1.0f});
+
+    mat4 overall;
+    glm_mat4_mul(proj, trans, overall);
+
+    //render cam1
+    vkCmdBindDescriptorSets(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->m_Renderer.pipelineLayout, 0, 1, &pGame->m_Renderer.textureSets[TCAM2][currentFrame], 0, NULL);
+    vkCmdBindPipeline(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->firstShader.graphicsPipeline);
+    vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall);
+    vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
+}
+void Game_RenderCam3(Game* pGame) {
+    mat4 proj;
+    glm_ortho(-pGame->Width / 2.0f, pGame->Width / 2.0f, pGame->Height / 2.0f, -pGame->Height / 2.0f, -1.0, 1.0, proj);
+    proj[1][1] *= -1;
+
+    mat4 trans;
+    glm_mat4_identity(trans);
+    glm_translate(trans, (vec3){0.0f, 0.0f, 0.0f});
+    glm_scale(trans, (vec3){pGame->Width, pGame->Height, 1.0f});
+
+    mat4 overall;
+    glm_mat4_mul(proj, trans, overall);
+
+    //render cam1
+    vkCmdBindDescriptorSets(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->m_Renderer.pipelineLayout, 0, 1, &pGame->m_Renderer.textureSets[TCAM3][currentFrame], 0, NULL);
+    vkCmdBindPipeline(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->firstShader.graphicsPipeline);
+    vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall);
+    vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
+}
+void Game_RenderCam4(Game* pGame) {
+    mat4 proj;
+    glm_ortho(-pGame->Width / 2.0f, pGame->Width / 2.0f, pGame->Height / 2.0f, -pGame->Height / 2.0f, -1.0, 1.0, proj);
+    proj[1][1] *= -1;
+
+    mat4 trans;
+    glm_mat4_identity(trans);
+    glm_translate(trans, (vec3){0.0f, 0.0f, 0.0f});
+    glm_scale(trans, (vec3){pGame->Width, pGame->Height, 1.0f});
+
+    mat4 overall;
+    glm_mat4_mul(proj, trans, overall);
+
+    //render cam1
+    vkCmdBindDescriptorSets(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->m_Renderer.pipelineLayout, 0, 1, &pGame->m_Renderer.textureSets[TCAM4][currentFrame], 0, NULL);
+    vkCmdBindPipeline(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->firstShader.graphicsPipeline);
+    vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall);
     vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
 }
 void Game_RenderMonitorFlip(Game* pGame) {
@@ -336,3 +447,7 @@ void Game_RenderMonitorFlip(Game* pGame) {
     vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame], pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(mat4) + sizeof(float), sizeof(float), &flipFrames);
     vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
 }
+
+
+
+
