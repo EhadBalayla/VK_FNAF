@@ -73,7 +73,7 @@ void Game_RenderMonitorFlip(Game* pGame);
 void Game_Init(Game* pGame) {
     //freeing the console on Windows
     #ifdef _WIN32
-    freeconsole();
+    FreeConsole();
     #endif
 
     //initializing parameters
