@@ -1,5 +1,4 @@
 # VK_FNAF
-
 a Five Nights at Freddy's fangame made using C and Vulkan, in development obviously but yeah.
 
 # How to install
@@ -9,25 +8,27 @@ make sure you have Make installed, CMake (version 3.16 minimum) and GIT installe
 
 - download the Vulkan development libraries
 ```bash
-    sudo apt-get install libvulkan-dev vulkan-validationlayers-dev spirv-tools
+sudo apt-get install libvulkan-dev vulkan-validationlayers-dev spirv-tools
 ```
 - download GLFW3
 ```bash
-    sudo apt-get install libglfw3-dev
+sudo apt-get install libglfw3-dev
 ```
 - download FreeType
 ```bash
-    sudo apt-get install libfreetype-dev
+sudo apt-get install libfreetype-dev
 ```
+im not sure about Arch(Pacman) or other distros with their own package manager, but i'd assume they are similar, basically just download their equivalents
+
 
 -then clone the repo
 ```bash
-    git clone https://github.com/EhadBalayla/VK_FNAF.git
+git clone https://github.com/EhadBalayla/VK_FNAF.git
 ```
 
 -then open a terminal inside the folder of the repo and run
 ```bash
-    ./BuildRelease.sh
+./BuildRelease.sh
 ```
 which will run the script to build Cmake with release build type and compile with make and open the game
 
@@ -40,23 +41,23 @@ also make sure you have VCPKG installed (follow only the 1st step of this instal
 
 open a CMD in VCPKG's root folder and type this command:
 ```bash
-    vcpkg.exe install glfw3 freetype --triplet=x64-windows-static
+vcpkg.exe install glfw3 freetype --triplet=x64-windows-static
 ```
 
 then clone the repo
 ```bash
-    git clone https://github.com/EhadBalayla/VK_FNAF.git
+git clone https://github.com/EhadBalayla/VK_FNAF.git
 ```
 
 then open a CMD inside the folder of the repo and type this command:
 ```bash
-    cmake -B build -DCMAKE_TOOLCHAIN_FILE=[VCPKG_ROOT]/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_PREFIX_PATH=[VCPKG_ROOT]/installed/x64-windows-static/
+cmake -B build -DCMAKE_TOOLCHAIN_FILE=[VCPKG_ROOT]/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_PREFIX_PATH=[VCPKG_ROOT]/installed/x64-windows-static/
 ```
 and make sure to replace every [VCPKG_ROOT] with the path to the root folder of VCPKG
 
 and then after that in the same CMD type this command:
 ```bash
-    cmake --build build --config release
+cmake --build build --config release
 ```
 
 then open the visual studio repository inside the generated build folder inside the folder of the repository and compile the ALL_BUILD project inside it
@@ -64,4 +65,4 @@ then open the visual studio repository inside the generated build folder inside 
 and then in [REPO_FOLDER]/Game/Compiled there should be a "Release" folder with the EXE inside it, move the EXE into the "Compiled" folder above.
 
 ## MacOS
-IDK i dont use it and also fuck MacOS and fuck Apple i'd rather use Windows 11 than being stuck in Apple's ecosystem
+IDK i dont use it and also fuck MacOS and fuck Apple i'd rather use Windows 11 than being stuck in Apple's ecosystem (i dual boot Windows 10 and Ubuntu i dont use 11 but you get my idea)
