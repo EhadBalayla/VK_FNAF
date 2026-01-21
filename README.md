@@ -62,7 +62,7 @@ cmake --build build --config release
 
 then open the visual studio repository inside the generated build folder inside the folder of the repository and compile the ALL_BUILD project inside it
 
-and then in [REPO_FOLDER]/Game/Compiled there should be a "Release" folder with the EXE inside it, move the EXE into the "Compiled" folder above.
+and now the EXE should be in [REPO]/Game/Compiled 
 
 ## MacOS
 IDK i dont use it and also fuck MacOS and fuck Apple i'd rather use Windows 11 than being stuck in Apple's ecosystem (i dual boot Windows 10 and Ubuntu i dont use 11 but you get my idea)
