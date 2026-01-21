@@ -10,6 +10,8 @@ typedef struct {
     TextDisplayer clockText;
     TextDisplayer sundayText;
     UIButton testButton;
+    UIButton testButton2;
+    UIButton testButton3;
 } OfficeHUDScreen;
 
 void OfficeHUDScreen_Initialize(OfficeHUDScreen* pScreen);

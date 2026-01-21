@@ -6,7 +6,7 @@
 
 extern int currentFrame;
 
-#define MAX_RENDERS 14
+#define MAX_RENDERS 15
 
 #define OFFICE 0
 #define OFFICE_FAN 1
@@ -22,6 +22,7 @@ extern int currentFrame;
 #define TCAM4 11
 #define LEFT_DOOR 12
 #define RIGHT_DOOR 13
+#define MIDDLE_DOOR 14
 
 typedef struct {
     //Vulkan setup handles (already created externally, will just be passing references)

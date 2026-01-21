@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "compiling code"
 make
-echo "running game"
 cd Game/Compiled
+echo "running game"
 ./VK_FNAF

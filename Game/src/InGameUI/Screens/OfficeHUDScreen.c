@@ -35,8 +35,17 @@ void FlipMonitorUp(void* pHoverable) {
     }
 }
 
-void PressButton(void* pButton) {
-    printf("pressed a test button BOIII\n");
+void PressLeftButton(void* pButton) {
+    if(!GGame->IsLeftDoorClosed) GGame->IsLeftDoorClosed = 1;
+    else GGame->IsLeftDoorClosed = 0;
+}
+void PressRightButton(void* pButton) {
+    if(!GGame->IsRightDoorClosed) GGame->IsRightDoorClosed = 1;
+    else GGame->IsRightDoorClosed = 0;
+}
+void PressMidButton(void* pButton) {
+    if(!GGame->IsMiddleDoorClosed) GGame->IsMiddleDoorClosed = 1;
+    else GGame->IsMiddleDoorClosed = 0;
 }
 
 
@@ -45,6 +54,8 @@ void OfficeHUDScreen_Initialize(OfficeHUDScreen* pScreen) {
     TextDisplayer* clockText = &pScreen->clockText;
     TextDisplayer* sundayText = &pScreen->sundayText;
     UIButton* testButton = &pScreen->testButton;
+    UIButton* testButton2 = &pScreen->testButton2;
+    UIButton* testButton3 = &pScreen->testButton3;
 
     //setting the monitor hover
     monitorHover->position[0] = 0.0f; monitorHover->position[1] = 30.0f;
@@ -66,21 +77,44 @@ void OfficeHUDScreen_Initialize(OfficeHUDScreen* pScreen) {
     sundayText->textScale = 0.75f;
     sundayText->projMat = Left_Top;
 
-    testButton->position[0] = 400.0f; testButton->position[1] = 100.0f;
+
+    //door buttons
+    testButton->position[0] = 400.0f; testButton->position[1] = 250.0f;
     testButton->scale[0] = 50.0f; testButton->scale[1] = 50.0f;
     testButton->texID = MONITOR_HOVER;
-    testButton->OnClick = PressButton;
+    testButton->OnClick = PressLeftButton;
     testButton->projMat = Center;
+
+    testButton2->position[0] = -400.0f; testButton2->position[1] = 250.0f;
+    testButton2->scale[0] = 50.0f; testButton2->scale[1] = 50.0f;
+    testButton2->texID = MONITOR_HOVER;
+    testButton2->OnClick = PressRightButton;
+    testButton2->projMat = Center;
+
+    testButton3->position[0] = 0.0f; testButton3->position[1] = -300.0f;
+    testButton3->scale[0] = 50.0f; testButton3->scale[1] = 50.0f;
+    testButton3->texID = MONITOR_HOVER;
+    testButton3->OnClick = PressMidButton;
+    testButton3->projMat = Center;
 }
 void OfficeHUDScreen_Update(OfficeHUDScreen* pScreen) {
     UpdateHoverable(&pScreen->monitorHover);
+
+    pScreen->testButton.position[0] = GGame->horizontalScroll + 1250.0f;
+    pScreen->testButton2.position[0] = GGame->horizontalScroll - 1250.0f;
+    pScreen->testButton3.position[0] = GGame->horizontalScroll;
+
     UpdateButton(&pScreen->testButton);
+    UpdateButton(&pScreen->testButton2);
+    UpdateButton(&pScreen->testButton3);
 }
 void OfficeHUDScreen_Render(OfficeHUDScreen* pScreen) {
     UIHoverable* monitorHover = &pScreen->monitorHover;
     TextDisplayer* clockText = &pScreen->clockText;
     TextDisplayer* sundayText = &pScreen->sundayText;
     UIButton* testButton = &pScreen->testButton;
+    UIButton* testButton2 = &pScreen->testButton2;
+    UIButton* testButton3 = &pScreen->testButton3;
 
     if((int)GGame->GameTime != lastTime) {
         lastTime = (int)GGame->GameTime;
@@ -93,4 +127,6 @@ void OfficeHUDScreen_Render(OfficeHUDScreen* pScreen) {
     RenderText(clockText);
     RenderText(sundayText);
     RenderButton(testButton);
+    RenderButton(testButton2);
+    RenderButton(testButton3);
 }

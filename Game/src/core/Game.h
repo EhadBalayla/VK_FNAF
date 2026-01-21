@@ -70,6 +70,10 @@ typedef struct {
 
     InGameState states;
     SelectedCamera selectedCam;
+
+    int IsLeftDoorClosed;
+    int IsRightDoorClosed;
+    int IsMiddleDoorClosed;
 } Game;
 
 extern Game* GGame; //a global pointer for the game instance

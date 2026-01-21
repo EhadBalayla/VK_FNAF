@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-char* ReadFile(const char* filename, size_t* returnedSize) {
+char* mReadFile(const char* filename, size_t* returnedSize) {
     FILE* file = fopen(filename, "rb");
     if(file == NULL) {
         fprintf(stderr, "failed to open file for shader");
@@ -19,7 +19,7 @@ char* ReadFile(const char* filename, size_t* returnedSize) {
 
     char* buffer = (char*)malloc(fileSize);
 
-    fread(buffer, fileSize, 1, file);
+    size_t rS = fread(buffer, fileSize, 1, file);
 
     fclose(file);
 
@@ -44,8 +44,8 @@ VkShaderModule createShaderModule(char* code, size_t codeSize) {
 
 void Shader_Load(Shader* pShader, const char* vertexFile, const char* fragmentFile, int IsScreen, int EnableAlpha) {
     size_t vertexCodeSize, fragmentCodeSize;
-    char* vertexCode = ReadFile(vertexFile, &vertexCodeSize);
-    char* fragmentCode = ReadFile(fragmentFile, &fragmentCodeSize);
+    char* vertexCode = mReadFile(vertexFile, &vertexCodeSize);
+    char* fragmentCode = mReadFile(fragmentFile, &fragmentCodeSize);
 
     VkShaderModule vertexModule = createShaderModule(vertexCode, vertexCodeSize);
     VkShaderModule fragmentModule = createShaderModule(fragmentCode, fragmentCodeSize);

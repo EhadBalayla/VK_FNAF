@@ -18,6 +18,9 @@ double lastMouseY = 0.0;
 
 float fanSequence = 0.0f;
 float monitorFlipSequence = 0.0f;
+float LeftDoorSequence = 1.0f;
+float RightDoorSequence = 1.0f;
+float MiddleDoorSequence = 1.0f;
 
 char* textureLocations[] = {
     "Textures/Debug_Office.png",
@@ -33,7 +36,8 @@ char* textureLocations[] = {
     "Textures/Debug_CAM3.png",
     "Textures/Debug_CAM4.png",
     "Textures/Debug_LeftDoor.png",
-    "Textures/Debug_RightDoor.png"
+    "Textures/Debug_RightDoor.png",
+    "Textures/Debug_MiddleDoor.png"
 };
 
 
@@ -80,6 +84,10 @@ void Game_Init(Game* pGame) {
 
     pGame->states = Office;
     pGame->selectedCam = CAM1;
+
+    pGame->IsLeftDoorClosed = 0;
+    pGame->IsRightDoorClosed = 0;
+    pGame->IsMiddleDoorClosed = 0;
 
     //create the Window and initialize context and swapchain
     Window_InitGLFW();
@@ -214,7 +222,19 @@ void Game_Tick(Game* pGame) {
     glm_ortho(-pGame->Width / 2.0f, pGame->Width / 2.0f, -pGame->Height / 2.0f, pGame->Height / 2.0f, -1.0f, 1.0f, (vec4*)Center);
     glm_ortho(-pGame->Width / 2.0f, pGame->Width / 2.0f, pGame->Height, 0.0f, -1.0f, 1.0f, (vec4*)Center_Bottom);
     glm_ortho(0.0f, pGame->Width, 0.0f, pGame->Height, -1.0f, 1.0f, (vec4*)Left_Top);
-    
+
+    double midRelX = GGame->MouseX - GGame->Width / 2.0;
+    double maxDisFromMid = GGame->Width / 2.0;
+    if(midRelX < -(maxDisFromMid / 2.0)) {
+        float scale = -(midRelX + maxDisFromMid / 2.0);
+        GGame->horizontalScroll += 10.0f * scale * GGame->DeltaTime;
+    }
+    else if(midRelX > maxDisFromMid / 2.0) {
+        float scale = midRelX - maxDisFromMid / 2.0;
+        GGame->horizontalScroll -= 10.0f * scale * GGame->DeltaTime;
+    }
+    GGame->horizontalScroll = fclamp(GGame->horizontalScroll, -798.514893, 798.514893);
+
     switch(pGame->states) {
         case Office: {
             OfficeHUDScreen_Update(&pGame->officeHUD);
@@ -298,18 +318,6 @@ void Game_RenderUILayer(Game* pGame) {
 
 
 void Game_RenderOffice(Game* pGame) {
-    double midRelX = GGame->MouseX - GGame->Width / 2.0;
-    double maxDisFromMid = GGame->Width / 2.0;
-    if(midRelX < -(maxDisFromMid / 2.0)) {
-        float scale = -(midRelX + maxDisFromMid / 2.0);
-        GGame->horizontalScroll += 10.0f * scale * GGame->DeltaTime;
-    }
-    else if(midRelX > maxDisFromMid / 2.0) {
-        float scale = midRelX - maxDisFromMid / 2.0;
-        GGame->horizontalScroll -= 10.0f * scale * GGame->DeltaTime;
-    }
-    GGame->horizontalScroll = fclamp(GGame->horizontalScroll, -798.514893, 798.514893);
-
     mat4 proj;
     glm_ortho(-pGame->Width / 2.0f, pGame->Width / 2.0f, pGame->Height / 2.0f, -pGame->Height / 2.0f, -1.0, 1.0, proj);
     proj[1][1] *= -1;
@@ -329,13 +337,48 @@ void Game_RenderOffice(Game* pGame) {
     vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall);
     vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
     
+
+
+    float relationX = (float)GGame->Width / 1600.0f;
+    float relationY = (float)GGame->Height / 900.0f;
+
+
+    //render middle door
+    if(pGame->IsMiddleDoorClosed) {
+        if(MiddleDoorSequence > 0.0f) {
+            MiddleDoorSequence -= pGame->DeltaTime * 10.0f;
+        }
+    } else {
+        if(MiddleDoorSequence < 1.0f) {
+            MiddleDoorSequence += pGame->DeltaTime * 10.0f;
+        }
+    }
+    MiddleDoorSequence = fclamp(MiddleDoorSequence, 0.01f, 1.0f);
+    int midDoorFrame = MiddleDoorSequence * 8 - 1;
+    int midDoorMaxFrames = 8;
+
+    mat4 trans5;
+    glm_mat4_identity(trans5);
+    glm_translate(trans5, (vec3){pGame->horizontalScroll, 39.375f * relationY, 0.0f});
+    glm_scale(trans5, (vec3){320.0f * relationX, 268.125 * relationY, 1.0f});
+
+    mat4 overall5;
+    glm_mat4_mul(proj, trans5, overall5);
+
+    vkCmdBindDescriptorSets(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->m_Renderer.pipelineLayout, 0, 1, &pGame->m_Renderer.textureSets[MIDDLE_DOOR][currentFrame], 0, NULL);
+    vkCmdBindPipeline(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->atlasShader.graphicsPipeline);
+    vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall5);
+    vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(mat4), sizeof(int), &midDoorFrame);
+    vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(mat4) + sizeof(int), sizeof(int), &midDoorMaxFrames);
+    vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
+
+
+
+
     //render office fan
     fanSequence += pGame->DeltaTime * 50.0f;
     int fanFrames = 24;
     int fanIdx = (int)fanSequence % 24;
-
-    float relationX = (float)GGame->Width / 1600.0f;
-    float relationY = (float)GGame->Height / 900.0f;
 
     mat4 trans2;
     glm_mat4_identity(trans2);
@@ -350,6 +393,68 @@ void Game_RenderOffice(Game* pGame) {
     vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall2);
     vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(mat4), sizeof(int), &fanIdx);
     vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(mat4) + sizeof(int), sizeof(int), &fanFrames);
+    vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
+
+
+
+    //render left door
+    if(pGame->IsLeftDoorClosed) {
+        if(LeftDoorSequence > 0.0f) {
+            LeftDoorSequence -= pGame->DeltaTime * 10.0f;
+        }
+    } else {
+        if(LeftDoorSequence < 1.0f) {
+            LeftDoorSequence += pGame->DeltaTime * 10.0f;
+        }
+    }
+    LeftDoorSequence = fclamp(LeftDoorSequence, 0.01f, 1.0f);
+    int leftDoorFrame = LeftDoorSequence * 8 - 1;
+    int leftDoorMaxFrames = 8;
+
+    mat4 trans3;
+    glm_mat4_identity(trans3);
+    glm_translate(trans3, (vec3){990.0f * relationX + pGame->horizontalScroll, 86.25f * relationY, 0.0f});
+    glm_scale(trans3, (vec3){155.0f * relationX, 367.5f * relationY, 1.0f});
+
+    mat4 overall3;
+    glm_mat4_mul(proj, trans3, overall3);
+
+    vkCmdBindDescriptorSets(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->m_Renderer.pipelineLayout, 0, 1, &pGame->m_Renderer.textureSets[LEFT_DOOR][currentFrame], 0, NULL);
+    vkCmdBindPipeline(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->atlasShader.graphicsPipeline);
+    vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall3);
+    vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(mat4), sizeof(int), &leftDoorFrame);
+    vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(mat4) + sizeof(int), sizeof(int), &leftDoorMaxFrames);
+    vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
+
+
+
+    //render right door
+    if(pGame->IsRightDoorClosed) {
+        if(RightDoorSequence > 0.0f) {
+            RightDoorSequence -= pGame->DeltaTime * 10.0f;
+        }
+    } else {
+        if(RightDoorSequence < 1.0f) {
+            RightDoorSequence += pGame->DeltaTime * 10.0f;
+        }
+    }
+    RightDoorSequence = fclamp(RightDoorSequence, 0.01f, 1.0f);
+    int rightDoorFrame = RightDoorSequence * 8 - 1;
+    int rightDoorMaxFrames = 8;
+
+    mat4 trans4;
+    glm_mat4_identity(trans4);
+    glm_translate(trans4, (vec3){-990.0f * relationX + pGame->horizontalScroll, 86.25f * relationY, 0.0f});
+    glm_scale(trans4, (vec3){155.0f * relationX, 367.5f * relationY, 1.0f});
+
+    mat4 overall4;
+    glm_mat4_mul(proj, trans4, overall4);
+
+    vkCmdBindDescriptorSets(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->m_Renderer.pipelineLayout, 0, 1, &pGame->m_Renderer.textureSets[RIGHT_DOOR][currentFrame], 0, NULL);
+    vkCmdBindPipeline(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->atlasShader.graphicsPipeline);
+    vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall4);
+    vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(mat4), sizeof(int), &rightDoorFrame);
+    vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(mat4) + sizeof(int), sizeof(int), &rightDoorMaxFrames);
     vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
 }
 void Game_RenderCam1(Game* pGame) {
@@ -438,7 +543,7 @@ void Game_RenderMonitorFlip(Game* pGame) {
 
     mat4 overall;
     glm_mat4_identity(overall);
-    glm_mat4_mul(Center, pos, overall);
+    glm_mat4_mul((vec4*)Center, pos, overall);
 
     vkCmdBindDescriptorSets(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->m_Renderer.pipelineLayout, 0, 1, &pGame->m_Renderer.textureSets[MONITOR_FLIP][currentFrame], 0, NULL);
     vkCmdBindPipeline(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->UIAtlasShader.graphicsPipeline);
