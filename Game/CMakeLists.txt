@@ -21,6 +21,6 @@ target_link_libraries(Game PRIVATE m
 )
 
 set_target_properties(Game PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Compiled
+    RUNTIME_OUTPUT_DIRECTORY "$1<:${CMAKE_CURRENT_SOURCE_DIR}/Compiled"
 	RUNTIME_OUTPUT_NAME "VK_FNAF"
 )

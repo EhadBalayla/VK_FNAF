@@ -65,8 +65,17 @@ void Game_RenderCam3(Game* pGame);
 void Game_RenderCam4(Game* pGame);
 void Game_RenderMonitorFlip(Game* pGame);
 
+//specifically for freeing the console on Windows
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 void Game_Init(Game* pGame) {
+    //freeing the console on Windows
+    #ifdef _WIN32
+    freeconsole();
+    #endif
+
     //initializing parameters
     pGame->Width = 1600;
     pGame->Height = 900;
