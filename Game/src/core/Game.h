@@ -6,6 +6,7 @@
 #include "Shader.h"
 #include "Texture.h"
 #include "FontLoader.h"
+#include "AudioPlayer.h"
 
 #include "../InGameUI/Screens/OfficeHUDScreen.h"
 #include "../InGameUI/Screens/MonitorHUDScreen.h"
@@ -19,7 +20,8 @@ typedef enum {
     Office, //for when the monitor is down
     FlippingUp, //for when the monitor is in the process of being flipped up
     Monitor, //for when the player is in the monitor
-    FlippingDown //for when the monitor is in the process of being flipped down
+    FlippingDown, //for when the monitor is in the process of being flipped down
+    Jumpscare //for when you get jumpscared
 } InGameState;
 
 typedef enum {
@@ -29,11 +31,20 @@ typedef enum {
     CAM4
 } SelectedCamera;
 
+typedef enum {
+    FeddyCam1,
+    FeddyCam2,
+    FeddyCam3,
+    FeddyCam4,
+    FeddyJumpscare
+} FeddyState;
+
 typedef struct {
     //the entire systems
     Window m_Window;
     Renderer m_Renderer;
     FontLoader m_Font;
+    AudioPlayer m_Audio;
 
     //some configurational parameters
     int Width;
@@ -70,6 +81,9 @@ typedef struct {
 
     InGameState states;
     SelectedCamera selectedCam;
+    FeddyState feddyState;
+
+    int FeddyAI;
 
     int IsLeftDoorClosed;
     int IsRightDoorClosed;

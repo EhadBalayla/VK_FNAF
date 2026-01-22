@@ -3,6 +3,9 @@
 #include <cglm/cglm.h>
 #include <GLFW/glfw3.h>
 
+#include <stdlib.h> //for the rand()
+#include <time.h> //for time(NULL)
+
 //small helper function
 float fclamp(float value, float min, float max) {
     if(value < min) value = min;
@@ -10,6 +13,10 @@ float fclamp(float value, float min, float max) {
 
     return value;
 }
+int GetRandomNumber(int min, int max) {
+    return (rand() % (max - min + 1)) + min;
+}
+
 //temporary parameters
 double LastTime = 0.0;
 
@@ -21,6 +28,8 @@ float monitorFlipSequence = 0.0f;
 float LeftDoorSequence = 1.0f;
 float RightDoorSequence = 1.0f;
 float MiddleDoorSequence = 1.0f;
+float JumpscareSequence = 0.0f;
+float FeddyTimer = 0.0f;
 
 char* textureLocations[] = {
     "Textures/Debug_Office.png",
@@ -37,7 +46,12 @@ char* textureLocations[] = {
     "Textures/Debug_CAM4.png",
     "Textures/Debug_LeftDoor.png",
     "Textures/Debug_RightDoor.png",
-    "Textures/Debug_MiddleDoor.png"
+    "Textures/Debug_MiddleDoor.png",
+    "Textures/Debug_FeddyCam1.png",
+    "Textures/Debug_FeddyCam2.png",
+    "Textures/Debug_FeddyCam3.png",
+    "Textures/Debug_FeddyCam4.png",
+    "Textures/Debug_FeddyJumpscare.png"
 };
 
 
@@ -64,6 +78,7 @@ void Game_RenderCam2(Game* pGame);
 void Game_RenderCam3(Game* pGame);
 void Game_RenderCam4(Game* pGame);
 void Game_RenderMonitorFlip(Game* pGame);
+void Game_RenderFeddyJumpscare(Game* pGame);
 
 //specifically for freeing the console on Windows
 #ifdef _WIN32
@@ -75,6 +90,8 @@ void Game_Init(Game* pGame) {
     #ifdef _WIN32
     FreeConsole();
     #endif
+
+    srand(time(NULL));
 
     //initializing parameters
     pGame->Width = 1600;
@@ -93,6 +110,9 @@ void Game_Init(Game* pGame) {
 
     pGame->states = Office;
     pGame->selectedCam = CAM1;
+    pGame->feddyState = FeddyCam1;
+
+    pGame->FeddyAI = 20;
 
     pGame->IsLeftDoorClosed = 0;
     pGame->IsRightDoorClosed = 0;
@@ -137,6 +157,9 @@ void Game_Init(Game* pGame) {
     Shader_Load(&pGame->TextShader, "Shaders/TextShader_vert.spv", "Shaders/TextShader_frag.spv", 1, 1);
     Shader_Load(&pGame->UIAtlasShader, "Shaders/AtlasShader_vert.spv", "Shaders/AtlasShader_frag.spv", 1, 1); //same as the atlas shader but for the swapchain and with alpha blending
 
+    //initializing the audio engine
+    AudioPlayer_Init(&pGame->m_Audio);
+
     //one last thing, initialize the in game UI
     OfficeHUDScreen_Initialize(&pGame->officeHUD);
     MonitorHUDScreen_Initialize(&pGame->monitorHUD);
@@ -177,6 +200,8 @@ void Game_Loop(Game* pGame) {
 }
 void Game_Terminate(Game* pGame) {
     Renderer_wait(&pGame->m_Renderer);
+
+    AudioPlayer_Terminate(&pGame->m_Audio);
 
     Shader_Delete(&pGame->UIAtlasShader);
     Shader_Delete(&pGame->TextShader);
@@ -244,6 +269,29 @@ void Game_Tick(Game* pGame) {
     }
     GGame->horizontalScroll = fclamp(GGame->horizontalScroll, -798.514893, 798.514893);
 
+    if(pGame->states != Jumpscare) {
+        FeddyTimer += pGame->DeltaTime;
+        if(FeddyTimer >= 7.0f) { //feddy moves every 7 seconds
+            FeddyTimer = 0.0f;
+            int rng = GetRandomNumber(1, 20);
+            if(pGame->FeddyAI >= rng) {
+                if(pGame->feddyState == FeddyCam1) pGame->feddyState = FeddyCam2;
+                else if(pGame->feddyState == FeddyCam2) pGame->feddyState = FeddyCam3;
+                else if(pGame->feddyState == FeddyCam3) pGame->feddyState = FeddyCam4;
+                else if(pGame->feddyState == FeddyCam4) {
+                    if(pGame->IsMiddleDoorClosed) {
+                        pGame->feddyState = FeddyCam1;
+                    }
+                    else { 
+                        pGame->feddyState = FeddyJumpscare;
+                        pGame->states = Jumpscare;
+                        AudioPlayer_Play2DSound(&pGame->m_Audio, "Sounds/Debug_Jumpscare.mp3");
+                    }
+                }
+            }
+        }
+    }
+
     switch(pGame->states) {
         case Office: {
             OfficeHUDScreen_Update(&pGame->officeHUD);
@@ -302,6 +350,10 @@ void Game_RenderGameLayer(Game* pGame) {
             Game_RenderOffice(pGame);
             break;
         }
+        case Jumpscare: {
+
+            break;
+        }
     }
 }
 void Game_RenderUILayer(Game* pGame) {
@@ -320,6 +372,10 @@ void Game_RenderUILayer(Game* pGame) {
         }
         case FlippingDown: {
             Game_RenderMonitorFlip(pGame);
+            break;
+        }
+        case Jumpscare: {
+            Game_RenderFeddyJumpscare(pGame);
             break;
         }
     }
@@ -484,6 +540,25 @@ void Game_RenderCam1(Game* pGame) {
     vkCmdBindPipeline(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->firstShader.graphicsPipeline);
     vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall);
     vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
+
+    float relationX = (float)GGame->Width / 1600.0f;
+    float relationY = (float)GGame->Height / 900.0f;
+
+    if(pGame->feddyState == FeddyCam1) {
+        mat4 trans2;
+        glm_mat4_identity(trans2);
+        glm_translate(trans2, (vec3){102.5f * relationX, -90.0f * relationY, 0.0f});
+        glm_scale(trans2, (vec3){232.5f * relationX,  255.0f * relationY, 1.0f});
+
+        mat4 overall2;
+        glm_mat4_mul(proj, trans2, overall2);
+
+        //render cam1
+        vkCmdBindDescriptorSets(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->m_Renderer.pipelineLayout, 0, 1, &pGame->m_Renderer.textureSets[FEDDY_CAM1][currentFrame], 0, NULL);
+        vkCmdBindPipeline(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->firstShader.graphicsPipeline);
+        vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall2);
+        vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
+    }
 }
 void Game_RenderCam2(Game* pGame) {
     mat4 proj;
@@ -503,6 +578,26 @@ void Game_RenderCam2(Game* pGame) {
     vkCmdBindPipeline(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->firstShader.graphicsPipeline);
     vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall);
     vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
+
+
+    float relationX = (float)GGame->Width / 1600.0f;
+    float relationY = (float)GGame->Height / 900.0f;
+
+    if(pGame->feddyState == FeddyCam2) {
+        mat4 trans2;
+        glm_mat4_identity(trans2);
+        glm_translate(trans2, (vec3){255.0f * relationX, -86.25f * relationY, 0.0f});
+        glm_scale(trans2, (vec3){135.0f * relationX, 240.0f * relationY, 1.0f});
+
+        mat4 overall2;
+        glm_mat4_mul(proj, trans2, overall2);
+
+        //render cam1
+        vkCmdBindDescriptorSets(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->m_Renderer.pipelineLayout, 0, 1, &pGame->m_Renderer.textureSets[FEDDY_CAM2][currentFrame], 0, NULL);
+        vkCmdBindPipeline(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->firstShader.graphicsPipeline);
+        vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall2);
+        vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
+    }
 }
 void Game_RenderCam3(Game* pGame) {
     mat4 proj;
@@ -522,6 +617,25 @@ void Game_RenderCam3(Game* pGame) {
     vkCmdBindPipeline(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->firstShader.graphicsPipeline);
     vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall);
     vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
+
+    float relationX = (float)GGame->Width / 1600.0f;
+    float relationY = (float)GGame->Height / 900.0f;
+
+    if(pGame->feddyState == FeddyCam3) {
+        mat4 trans2;
+        glm_mat4_identity(trans2);
+        glm_translate(trans2, (vec3){-285.0f * relationX, 71.25f * relationY, 0.0f});
+        glm_scale(trans2, (vec3){215.0f * relationX, 202.5 * relationY, 1.0f});
+
+        mat4 overall2;
+        glm_mat4_mul(proj, trans2, overall2);
+
+        //render cam1
+        vkCmdBindDescriptorSets(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->m_Renderer.pipelineLayout, 0, 1, &pGame->m_Renderer.textureSets[FEDDY_CAM3][currentFrame], 0, NULL);
+        vkCmdBindPipeline(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->firstShader.graphicsPipeline);
+        vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall2);
+        vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
+    }
 }
 void Game_RenderCam4(Game* pGame) {
     mat4 proj;
@@ -541,6 +655,25 @@ void Game_RenderCam4(Game* pGame) {
     vkCmdBindPipeline(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->firstShader.graphicsPipeline);
     vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall);
     vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
+
+    float relationX = (float)GGame->Width / 1600.0f;
+    float relationY = (float)GGame->Height / 900.0f;
+
+    if(pGame->feddyState == FeddyCam4) {
+        mat4 trans2;
+        glm_mat4_identity(trans2);
+        glm_translate(trans2, (vec3){302.5f * relationX, 461.25f * relationY, 0.0f});
+        glm_scale(trans2, (vec3){642.5f * relationX, 438.75f * relationY, 1.0f});
+
+        mat4 overall2;
+        glm_mat4_mul(proj, trans2, overall2);
+
+        //render cam1
+        vkCmdBindDescriptorSets(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->m_Renderer.pipelineLayout, 0, 1, &pGame->m_Renderer.textureSets[FEDDY_CAM4][currentFrame], 0, NULL);
+        vkCmdBindPipeline(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->firstShader.graphicsPipeline);
+        vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame],pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall2);
+        vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
+    }
 }
 void Game_RenderMonitorFlip(Game* pGame) {
     int flippingFrame = monitorFlipSequence * 10.0f * 24.0f;
@@ -559,6 +692,33 @@ void Game_RenderMonitorFlip(Game* pGame) {
     vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame], pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall);
     vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame], pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(mat4), sizeof(float), &flippingFrame);
     vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame], pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(mat4) + sizeof(float), sizeof(float), &flipFrames);
+    vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
+}
+void Game_RenderFeddyJumpscare(Game* pGame) {
+    mat4 proj;
+    glm_ortho(-pGame->Width / 2.0f, pGame->Width / 2.0f, pGame->Height / 2.0f, -pGame->Height / 2.0f, -1.0, 1.0, proj);
+    proj[1][1] *= -1;
+
+    mat4 trans;
+    glm_mat4_identity(trans);
+    glm_translate(trans, (vec3){0.0f, 0.0f, 0.0f});
+    glm_scale(trans, (vec3){pGame->Width / 2.0f, pGame->Height / 2.0f, 1.0f});
+
+    mat4 overall;
+    glm_mat4_mul(proj, trans, overall);
+
+
+    int frame = fclamp(JumpscareSequence, 0.0f, 1.9f) * 24.0f;
+    int maxFrames = 24;
+    if(JumpscareSequence < 0.9f)
+    JumpscareSequence += pGame->DeltaTime;
+
+    //render office
+    vkCmdBindDescriptorSets(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->m_Renderer.pipelineLayout, 0, 1, &pGame->m_Renderer.textureSets[FEDDY_JUMPSCARE][currentFrame], 0, NULL);
+    vkCmdBindPipeline(pGame->m_Renderer.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pGame->UIAtlasShader.graphicsPipeline);
+    vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame], pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), overall);
+    vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame], pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(mat4), sizeof(float), &frame);
+    vkCmdPushConstants(pGame->m_Renderer.commandBuffers[currentFrame], pGame->m_Renderer.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(mat4) + sizeof(float), sizeof(float), &maxFrames);
     vkCmdDraw(pGame->m_Renderer.commandBuffers[currentFrame], 6, 1, 0, 0);
 }
 

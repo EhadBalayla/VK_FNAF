@@ -32,20 +32,27 @@ int lastTime = 0;
 void FlipMonitorUp(void* pHoverable) {
     if(GGame->states == Office) {
         GGame->states = FlippingUp;
+        AudioPlayer_Play2DSound(&GGame->m_Audio, "Sounds/Debug_MonitorFlip.mp3");
     }
 }
 
 void PressLeftButton(void* pButton) {
     if(!GGame->IsLeftDoorClosed) GGame->IsLeftDoorClosed = 1;
     else GGame->IsLeftDoorClosed = 0;
+
+    AudioPlayer_Play2DSound(&GGame->m_Audio, "Sounds/Debug_Door.mp3");
 }
 void PressRightButton(void* pButton) {
     if(!GGame->IsRightDoorClosed) GGame->IsRightDoorClosed = 1;
     else GGame->IsRightDoorClosed = 0;
+
+    AudioPlayer_Play2DSound(&GGame->m_Audio, "Sounds/Debug_Door.mp3");
 }
 void PressMidButton(void* pButton) {
     if(!GGame->IsMiddleDoorClosed) GGame->IsMiddleDoorClosed = 1;
     else GGame->IsMiddleDoorClosed = 0;
+
+    AudioPlayer_Play2DSound(&GGame->m_Audio, "Sounds/Debug_Door.mp3");
 }
 
 
@@ -100,8 +107,11 @@ void OfficeHUDScreen_Initialize(OfficeHUDScreen* pScreen) {
 void OfficeHUDScreen_Update(OfficeHUDScreen* pScreen) {
     UpdateHoverable(&pScreen->monitorHover);
 
-    pScreen->testButton.position[0] = GGame->horizontalScroll + 1250.0f;
-    pScreen->testButton2.position[0] = GGame->horizontalScroll - 1250.0f;
+    float relationX = (float)GGame->Width / 1600.0f;
+    float relationY = (float)GGame->Height / 900.0f;
+
+    pScreen->testButton.position[0] = GGame->horizontalScroll + 1250.0f * relationX;
+    pScreen->testButton2.position[0] = GGame->horizontalScroll - 1250.0f * relationX;
     pScreen->testButton3.position[0] = GGame->horizontalScroll;
 
     UpdateButton(&pScreen->testButton);
