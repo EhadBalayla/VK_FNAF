@@ -59,9 +59,6 @@ and then after that in the same CMD type this command:
 ```bash
 cmake --build build --config release
 ```
-
-then open the visual studio repository inside the generated build folder inside the folder of the repository and compile the ALL_BUILD project inside it
-
 and now the EXE should be in [REPO]/Game/Compiled 
 
 ## MacOS

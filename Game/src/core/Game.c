@@ -112,7 +112,7 @@ void Game_Init(Game* pGame) {
     pGame->selectedCam = CAM1;
     pGame->feddyState = FeddyCam1;
 
-    pGame->FeddyAI = 20;
+    pGame->FeddyAI = 13;
 
     pGame->IsLeftDoorClosed = 0;
     pGame->IsRightDoorClosed = 0;
